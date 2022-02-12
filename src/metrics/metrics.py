@@ -15,31 +15,16 @@ def Accuracy(output, target, topk=1):
     return acc
 
 
-def InceptionScore(target, splits=1):
-    with torch.no_grad():
-        N = target.size(0)
-        pred = F.softmax(target, dim=-1)
-        split_scores = []
-        for k in range(splits):
-            part = pred[k * (N // splits): (k + 1) * (N // splits), :]
-            py = torch.mean(part, dim=0)
-            scores = F.kl_div(py.log().view(1, -1).expand_as(part), part, reduction='batchmean').exp()
-            split_scores.append(scores)
-        inception_score = torch.mean(torch.tensor(split_scores)).item()
-    return inception_score
-
-
 class Metric(object):
     def __init__(self, data_name, metric_name):
         self.data_name = data_name
         self.metric_name = metric_name
         self.pivot, self.pivot_name, self.pivot_direction = self.make_pivot(data_name)
         self.metric = {'Loss': (lambda input, output: output['loss'].item()),
-                       'Accuracy': (lambda input, output: recur(Accuracy, output['target'], input['target'])),
-                       'InceptionScore': (lambda input, output: recur(InceptionScore, output['target']))}
+                       'Accuracy': (lambda input, output: recur(Accuracy, output['target'], input['target']))}
 
     def make_pivot(self, data_name):
-        if data_name in ['MNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+        if data_name in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
             pivot = -float('inf')
             pivot_direction = 'up'
             pivot_name = 'Accuracy'

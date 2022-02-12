@@ -1,4 +1,3 @@
-import anytree
 import numpy as np
 import os
 import pickle
@@ -6,7 +5,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from utils import check_exists, makedir_exist_ok, save, load
-from .utils import download_url, extract_file, make_classes_counts, make_tree, make_flat_index
+from .utils import download_url, extract_file, make_classes_counts
 
 
 class CIFAR10(Dataset):
@@ -76,10 +75,8 @@ class CIFAR10(Dataset):
         with open(os.path.join(self.raw_folder, 'cifar-10-batches-py', 'batches.meta'), 'rb') as f:
             data = pickle.load(f, encoding='latin1')
             classes = data['label_names']
-        classes_to_labels = anytree.Node('U', index=[])
-        for c in classes:
-            make_tree(classes_to_labels, [c])
-        target_size = make_flat_index(classes_to_labels)
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        target_size = len(classes)
         return (train_id, train_data, train_target), (test_id, test_data, test_target), (classes_to_labels, target_size)
 
 
@@ -96,14 +93,8 @@ class CIFAR100(CIFAR10):
         with open(os.path.join(self.raw_folder, 'cifar-100-python', 'meta'), 'rb') as f:
             data = pickle.load(f, encoding='latin1')
             classes = data['fine_label_names']
-        classes_to_labels = anytree.Node('U', index=[])
-        for c in classes:
-            for k in CIFAR100_classes:
-                if c in CIFAR100_classes[k]:
-                    c = [k, c]
-                    break
-            make_tree(classes_to_labels, c)
-        target_size = make_flat_index(classes_to_labels, classes)
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        target_size = len(classes)
         return (train_id, train_data, train_target), (test_id, test_data, test_target), (classes_to_labels, target_size)
 
 

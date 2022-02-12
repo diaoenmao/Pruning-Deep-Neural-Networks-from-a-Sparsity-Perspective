@@ -5,7 +5,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from utils import check_exists, makedir_exist_ok, save, load
-from .utils import download_url, extract_file, make_classes_counts, make_tree, make_flat_index
+from .utils import download_url, extract_file, make_classes_counts
 
 
 class SVHN(Dataset):
@@ -74,13 +74,11 @@ class SVHN(Dataset):
         extra_data, extra_target = read_data_file(os.path.join(self.raw_folder, 'extra_32x32.mat'))
         train_id, test_id, extra_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(
             np.int64), np.arange(len(extra_data)).astype(np.int64)
-        classes_to_labels = anytree.Node('U', index=[])
         classes = list(map(str, list(range(10))))
-        for c in classes:
-            make_tree(classes_to_labels, [c])
-        classes_size = make_flat_index(classes_to_labels)
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        target_size = len(classes)
         return (train_id, train_data, train_target), (test_id, test_data, test_target), (
-            extra_id, extra_data, extra_target), (classes_to_labels, classes_size)
+            extra_id, extra_data, extra_target), (classes_to_labels, target_size)
 
 
 def read_data_file(path):

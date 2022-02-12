@@ -1,4 +1,3 @@
-import anytree
 import hashlib
 import os
 import glob
@@ -143,8 +142,7 @@ def make_data(root, extensions):
 def make_img(path, classes_to_labels, extensions=IMG_EXTENSIONS):
     img, label = [], []
     classes = []
-    leaf_nodes = classes_to_labels.leaves
-    for node in leaf_nodes:
+    for node in classes_to_labels:
         classes.append(node.name)
     for c in sorted(classes):
         d = os.path.join(path, c)
@@ -155,41 +153,8 @@ def make_img(path, classes_to_labels, extensions=IMG_EXTENSIONS):
                 if has_file_allowed_extension(filename, extensions):
                     cur_path = os.path.join(root, filename)
                     img.append(cur_path)
-                    label.append(anytree.find_by_attr(classes_to_labels, c).flat_index)
+                    label.append(classes_to_labels[c])
     return img, label
-
-
-def make_tree(root, name, attribute=None):
-    if len(name) == 0:
-        return
-    if attribute is None:
-        attribute = {}
-    this_name = name[0]
-    next_name = name[1:]
-    this_attribute = {k: attribute[k][0] for k in attribute}
-    next_attribute = {k: attribute[k][1:] for k in attribute}
-    this_node = anytree.find_by_attr(root, this_name)
-    this_index = root.index + [len(root.children)]
-    if this_node is None:
-        this_node = anytree.Node(this_name, parent=root, index=this_index, **this_attribute)
-    make_tree(this_node, next_name, next_attribute)
-    return
-
-
-def make_flat_index(root, given=None):
-    if given:
-        classes_size = 0
-        for node in anytree.PreOrderIter(root):
-            if len(node.children) == 0:
-                node.flat_index = given.index(node.name)
-                classes_size = given.index(node.name) + 1 if given.index(node.name) + 1 > classes_size else classes_size
-    else:
-        classes_size = 0
-        for node in anytree.PreOrderIter(root):
-            if len(node.children) == 0:
-                node.flat_index = classes_size
-                classes_size += 1
-    return classes_size
 
 
 class Compose(object):
