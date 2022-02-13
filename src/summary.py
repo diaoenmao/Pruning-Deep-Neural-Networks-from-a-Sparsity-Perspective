@@ -40,8 +40,7 @@ def runExperiment():
     content, total = parse_summary(summary)
     print(content)
     save_result = total
-    save_tag = '{}_{}_{}'.format(cfg['data_name'], cfg['model_name'], cfg['control_name'])
-    save(save_result, './output/result/{}.pt'.format(save_tag))
+    save(save_result, './output/result/{}.pt'.format(cfg['control_name']))
     return
 
 

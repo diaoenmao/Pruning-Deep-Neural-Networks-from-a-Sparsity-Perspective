@@ -1,12 +1,8 @@
 ---
 # control
 control:
-  teacher_data_name: MNIST
-  teacher_model_name: conv
-  num_teachers: 1
-  data_split_mode: iid
-  student_data_name: MNIST
-  student_model_name: conv
+  data_name: MNIST
+  model_name: mlp
 # experiment
 num_workers: 0
 init_seed: 0

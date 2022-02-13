@@ -113,53 +113,30 @@ def process_dataset(dataset):
 
 
 def process_control():
-    data_shape = {'MNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32], 'CIFAR100': [3, 32, 32]}
+    data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
+                  'CIFAR100': [3, 32, 32]}
+    cfg['data_name'] = cfg['control']['data_name']
+    cfg['data_shape'] = data_shape[cfg['data_name']]
+    cfg['model_name'] = cfg['control']['model_name']
+    if 'mlp' in cfg['model_name']:
+        mlp_control_list = cfg['model_name'].split('-')[1:]
+        cfg['mlp'] = {'hidden_size': mlp_control_list[0], 'scale_factor': mlp_control_list[1],
+                      'num_layers': mlp_control_list[2], 'activation': mlp_control_list[3]}
     cfg['conv'] = {'hidden_size': [32, 64]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
-    cfg['teacher_data_name'] = cfg['control']['teacher_data_name']
-    cfg['teacher_data_shape'] = data_shape[cfg['teacher_data_name']]
-    cfg['teacher_model_name'] = cfg['control']['teacher_model_name']
-    cfg['num_teachers'] = int(cfg['control']['num_teachers'])
-    cfg['teacher'] = {}
-    cfg['teacher']['shuffle'] = {'train': True, 'test': False}
-    cfg['teacher']['optimizer_name'] = 'SGD'
-    cfg['teacher']['lr'] = 1e-1
-    cfg['teacher']['momentum'] = 0.9
-    cfg['teacher']['weight_decay'] = 5e-4
-    cfg['teacher']['nesterov'] = True
-    cfg['teacher']['scheduler_name'] = 'CosineAnnealingLR'
-    cfg['teacher']['num_epochs'] = 400
-    cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
-    if 'data_split_mode' in cfg['control']:
-        cfg['data_split_mode'] = cfg['control']['data_split_mode']
-    if 'student_data_name' in cfg['control']:
-        cfg['student_data_name'] = cfg['control']['student_data_name']
-        cfg['student_data_shape'] = data_shape[cfg['student_data_name']]
-        if cfg['student_data_name'] == 'GEN':
-            cfg['generator_model_name'] = 'generator'
-            init_shape = {'MNIST': [7, 7], 'SVHN': [8, 8], 'CIFAR10': [8, 8], 'CIFAR100': [8, 8]}
-            cfg['generator'] = {'init_shape': init_shape[cfg['student_data_name']], 'latent_size': 1000,
-                                'hidden_size': [128, 64]}
-            cfg['generator']['shuffle'] = {'train': True, 'test': False}
-            cfg['generator']['optimizer_name'] = 'Adam'
-            cfg['generator']['lr'] = 2e-2
-            cfg['generator']['betas'] = (0.9, 0.999)
-            cfg['generator']['weight_decay'] = 0
-            cfg['generator']['scheduler_name'] = 'None'
-        cfg['student_model_name'] = cfg['control']['student_model_name']
-        cfg['student'] = {}
-        cfg['student']['shuffle'] = {'train': True, 'test': False}
-        cfg['student']['optimizer_name'] = 'SGD'
-        cfg['student']['lr'] = 1e-1
-        cfg['student']['momentum'] = 0.9
-        cfg['student']['weight_decay'] = 5e-4
-        cfg['student']['nesterov'] = True
-        cfg['student']['scheduler_name'] = 'CosineAnnealingLR'
-        cfg['student']['num_epochs'] = 2000
-        cfg['student']['batch_size'] = {'train': 1000, 'test': 1000}
-        cfg['student']['num_iter'] = 100
+    model_name = cfg['model_name']
+    cfg[model_name] = {}
+    cfg[model_name]['shuffle'] = {'train': True, 'test': False}
+    cfg[model_name]['optimizer_name'] = 'SGD'
+    cfg[model_name]['lr'] = 1e-1
+    cfg[model_name]['momentum'] = 0.9
+    cfg[model_name]['weight_decay'] = 5e-4
+    cfg[model_name]['nesterov'] = True
+    cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
+    cfg[model_name]['num_epochs'] = 400
+    cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
     return
 
 
@@ -261,13 +238,3 @@ def collate(input):
     for k in input:
         input[k] = torch.stack(input[k], 0)
     return input
-
-
-def make_model_name(model_name, num_models):
-    model_name_list = model_name.split('-')
-    num_models_per_split, num_models_remainder = divmod(num_models, len(model_name_list))
-    model_name = []
-    for i in range(len(model_name_list)):
-        model_name.extend([model_name_list[i] for _ in range(num_models_per_split)])
-    model_name += [model_name_list[-1] for _ in range(num_models_remainder)]
-    return model_name

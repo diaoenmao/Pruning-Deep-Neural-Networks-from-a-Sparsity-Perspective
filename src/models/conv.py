@@ -32,9 +32,9 @@ class Conv(nn.Module):
         return output
 
 
-def conv(data_shape, target_size):
-    data_shape = data_shape
-    target_size = target_size
+def conv():
+    data_shape = cfg['data_shape']
+    target_size = cfg['target_size']
     hidden_size = cfg['conv']['hidden_size']
     model = Conv(data_shape, hidden_size, target_size)
     model.apply(init_param_classifier)
