@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import init_param_classifier, loss_fn
+from .utils import init_param, loss_fn
 from config import cfg
 
 
@@ -85,7 +85,8 @@ class ResNet(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = self.f(input['data'])
+        x = normalize(input['data'])
+        x = self.f(x)
         output['target'] = x
         if 'target' in input:
             output['loss'] = loss_fn(output['target'], input['target'])
@@ -97,7 +98,7 @@ def resnet9():
     target_size = cfg['target_size']
     hidden_size = cfg['resnet9']['hidden_size']
     model = ResNet(data_shape, hidden_size, Block, [1, 1, 1, 1], target_size)
-    model.apply(init_param_classifier)
+    model.apply(init_param)
     return model
 
 
@@ -106,5 +107,5 @@ def resnet18():
     target_size = cfg['target_size']
     hidden_size = cfg['resnet18']['hidden_size']
     model = ResNet(data_shape, hidden_size, Block, [2, 2, 2, 2], target_size)
-    model.apply(init_param_classifier)
+    model.apply(init_param)
     return model

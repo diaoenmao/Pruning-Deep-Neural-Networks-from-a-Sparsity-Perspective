@@ -18,16 +18,15 @@ class CIFAR10(Dataset):
         self.transform = transform
         if not check_exists(self.processed_folder):
             self.process()
-        id, self.data, self.target = load(os.path.join(self.processed_folder, '{}.pt'.format(self.split)),
-                                          mode='pickle')
+        self.id, self.data, self.target = load(os.path.join(self.processed_folder, '{}.pt'.format(self.split)),
+                                               mode='pickle')
         self.classes_counts = make_classes_counts(self.target)
         self.classes_to_labels, self.target_size = load(os.path.join(self.processed_folder, 'meta.pt'), mode='pickle')
-        self.other = {'id': id}
 
     def __getitem__(self, index):
-        data, target = Image.fromarray(self.data[index]), torch.tensor(self.target[index])
-        other = {k: torch.tensor(self.other[k][index]) for k in self.other}
-        input = {**other, 'data': data, 'target': target}
+        id, data, target = torch.tensor(self.id[index]), Image.fromarray(self.data[index]), torch.tensor(
+            self.target[index])
+        input = {'id': id, 'data': data, 'target': target}
         if self.transform is not None:
             input = self.transform(input)
         return input

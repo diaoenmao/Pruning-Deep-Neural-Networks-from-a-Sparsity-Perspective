@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from config import cfg
 
 
-def init_param_classifier(m):
+def init_param(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
         if m.bias is not None:

@@ -9,15 +9,18 @@ from utils import save, collate, Stats, makedir_exist_ok, process_control, proce
 if __name__ == "__main__":
     stats_path = './res/stats'
     dim = 1
-    data_names = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']
-    process_control()
     cfg['seed'] = 0
+    data_names = ['Blob-100-10-10-1.0', 'Friedman-100-10-1.0']
+    cfg['control'] = {}
+    cfg['control']['model_name'] = 'wresnet28x2'
     with torch.no_grad():
         for data_name in data_names:
+            cfg['control']['data_name'] = data_name
+            process_control()
             dataset = fetch_dataset(data_name)
-            dataset['train'].transform=datasets.Compose([transforms.ToTensor()])
+            dataset['train'].transform = datasets.Compose([transforms.ToTensor()])
             process_dataset(dataset)
-            data_loader = make_data_loader(dataset, 'teacher')
+            data_loader = make_data_loader(dataset, cfg['model_name'])
             stats = Stats(dim=dim)
             for i, input in enumerate(data_loader['train']):
                 input = collate(input)

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from config import cfg
-from .utils import init_param_classifier, loss_fn
+from .utils import init_param, loss_fn
 
 
 class Conv(nn.Module):
@@ -25,7 +25,8 @@ class Conv(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = self.f(input['data'])
+        x = normalize(input['data'])
+        x = self.f(x)
         output['target'] = x
         if 'target' in input:
             output['loss'] = loss_fn(output['target'], input['target'])
@@ -37,5 +38,5 @@ def conv():
     target_size = cfg['target_size']
     hidden_size = cfg['conv']['hidden_size']
     model = Conv(data_shape, hidden_size, target_size)
-    model.apply(init_param_classifier)
+    model.apply(init_param)
     return model

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from config import cfg
-from .utils import init_param_classifier, loss_fn
+from .utils import init_param, loss_fn, normalize
 
 
 class MLP(nn.Module):
@@ -19,7 +19,7 @@ class MLP(nn.Module):
             else:
                 raise ValueError('Not valid activation')
             input_size = hidden_size
-            hidden_size = hidden_size * scale_factor
+            hidden_size = int(hidden_size * scale_factor)
         blocks.append(nn.Linear(input_size, target_size))
         self.blocks = nn.Sequential(*blocks)
 
@@ -29,7 +29,8 @@ class MLP(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = self.f(input['data'])
+        x = normalize(input['data'])
+        x = self.f(x)
         output['target'] = x
         if 'target' in input:
             output['loss'] = loss_fn(output['target'], input['target'])
@@ -43,6 +44,6 @@ def mlp():
     scale_factor = cfg['mlp']['scale_factor']
     num_layers = cfg['mlp']['num_layers']
     activation = cfg['mlp']['activation']
-    model = Conv(data_shape, hidden_size, scale_factor, num_layers, activation, target_size)
-    model.apply(init_param_classifier)
+    model = MLP(data_shape, hidden_size, scale_factor, num_layers, activation, target_size)
+    model.apply(init_param)
     return model

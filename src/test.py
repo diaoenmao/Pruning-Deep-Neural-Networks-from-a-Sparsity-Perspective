@@ -8,12 +8,13 @@ import models
 #     cfg['seed'] = 0
 #     torch.manual_seed(cfg['seed'])
 #     torch.cuda.manual_seed(cfg['seed'])
-#     cfg['data_name'] = 'CIFAR100'
-#     cfg['model_name'] = 'conv'
+#     # cfg['control']['data_name'] = 'MLP-r-100-10-32-1-1-sigmoid-1-1-0.5'
+#     cfg['control']['data_name'] = 'MLP-c-100-10-32-1-1-sigmoid-10-1-0.5'
+#     cfg['control']['model_name'] = 'conv'
 #     process_control()
 #     dataset = fetch_dataset(cfg['data_name'])
 #     process_dataset(dataset)
-#     data_loader = make_data_loader(dataset, 'teacher')
+#     data_loader = make_data_loader(dataset, cfg['model_name'])
 #     print(len(dataset['train']), len(dataset['test']))
 #     print(len(data_loader['train']), len(data_loader['test']))
 #     for i, input in enumerate(data_loader['train']):

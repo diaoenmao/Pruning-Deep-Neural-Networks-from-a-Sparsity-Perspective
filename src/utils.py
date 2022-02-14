@@ -113,15 +113,35 @@ def process_dataset(dataset):
 
 
 def process_control():
+    cfg['data_name'] = cfg['control']['data_name']
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
-    cfg['data_name'] = cfg['control']['data_name']
+    if 'Blob' in cfg['data_name']:
+        data_control_list = cfg['data_name'].split('-')[1:]
+        cfg['Blob'] = {'num_samples': int(data_control_list[0]), 'num_features': int(data_control_list[1]),
+                       'num_centers': int(data_control_list[2]), 'noise': float(data_control_list[3])}
+        data_shape[cfg['data_name']] = [cfg['Blob']['num_features']]
+    elif 'Friedman' in cfg['data_name']:
+        data_control_list = cfg['data_name'].split('-')[1:]
+        cfg['Friedman'] = {'num_samples': int(data_control_list[0]), 'num_features': int(data_control_list[1]),
+                           'noise': float(data_control_list[2])}
+        data_shape[cfg['data_name']] = [cfg['Friedman']['num_features']]
+    elif 'MLP' in cfg['data_name']:
+        data_control_list = cfg['data_name'].split('-')[1:]
+        cfg['MLP'] = {'mode': data_control_list[0], 'data_size': int(data_control_list[1]),
+                      'input_size': int(data_control_list[2]), 'hidden_size': int(data_control_list[3]),
+                      'scale_factor': float(data_control_list[4]), 'num_layers': int(data_control_list[5]),
+                      'activation': data_control_list[6], 'target_size': int(data_control_list[7]),
+                      'noise': float(data_control_list[8]), 'sparsity': float(data_control_list[9])}
+        data_shape[cfg['data_name']] = [cfg['MLP']['input_size']]
     cfg['data_shape'] = data_shape[cfg['data_name']]
-    cfg['model_name'] = cfg['control']['model_name']
-    if 'mlp' in cfg['model_name']:
-        mlp_control_list = cfg['model_name'].split('-')[1:]
-        cfg['mlp'] = {'hidden_size': mlp_control_list[0], 'scale_factor': mlp_control_list[1],
-                      'num_layers': mlp_control_list[2], 'activation': mlp_control_list[3]}
+    if 'mlp' in cfg['control']['model_name']:
+        mlp_control_list = cfg['control']['model_name'].split('-')
+        cfg['model_name'] = mlp_control_list[0]
+        cfg['mlp'] = {'hidden_size': int(mlp_control_list[1]), 'scale_factor': float(mlp_control_list[2]),
+                      'num_layers': int(mlp_control_list[3]), 'activation': mlp_control_list[4]}
+    else:
+        cfg['model_name'] = cfg['control']['model_name']
     cfg['conv'] = {'hidden_size': [32, 64]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
@@ -130,13 +150,26 @@ def process_control():
     cfg[model_name] = {}
     cfg[model_name]['shuffle'] = {'train': True, 'test': False}
     cfg[model_name]['optimizer_name'] = 'SGD'
-    cfg[model_name]['lr'] = 1e-1
+    cfg[model_name]['lr'] = 3e-2
     cfg[model_name]['momentum'] = 0.9
     cfg[model_name]['weight_decay'] = 5e-4
     cfg[model_name]['nesterov'] = True
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
-    cfg[model_name]['num_epochs'] = 400
-    cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+    if 'Blob' in cfg['data_name']:
+        cfg[model_name]['num_epochs'] = 100
+        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+    elif 'Friedman' in cfg['data_name']:
+        cfg[model_name]['num_epochs'] = 100
+        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+    elif 'MLP' in cfg['data_name']:
+        cfg[model_name]['num_epochs'] = 100
+        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+    elif cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+        cfg[model_name]['num_epochs'] = 400
+        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+    else:
+        raise ValueError('Not valid data name')
+    cfg['stats'] = make_stats()
     return
 
 
