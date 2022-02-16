@@ -55,7 +55,7 @@ class CIFAR10(Dataset):
         makedir_exist_ok(self.raw_folder)
         for (url, md5) in self.file:
             filename = os.path.basename(url)
-            download_url(url, self.raw_folder, filename, md5)
+            download_url(url, os.path.join(self.raw_folder, filename), md5)
             extract_file(os.path.join(self.raw_folder, filename))
         return
 

@@ -142,31 +142,30 @@ def process_control():
                       'num_layers': int(mlp_control_list[3]), 'activation': mlp_control_list[4]}
     else:
         cfg['model_name'] = cfg['control']['model_name']
-    cfg['conv'] = {'hidden_size': [32, 64]}
+    cfg['conv'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
-    model_name = cfg['model_name']
-    cfg[model_name] = {}
-    cfg[model_name]['shuffle'] = {'train': True, 'test': False}
-    cfg[model_name]['optimizer_name'] = 'SGD'
-    cfg[model_name]['lr'] = 3e-2
-    cfg[model_name]['momentum'] = 0.9
-    cfg[model_name]['weight_decay'] = 5e-4
-    cfg[model_name]['nesterov'] = True
-    cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
+    cfg['teacher'] = {}
+    cfg['teacher']['shuffle'] = {'train': True, 'test': False}
+    cfg['teacher']['optimizer_name'] = 'SGD'
+    cfg['teacher']['lr'] = 3e-2
+    cfg['teacher']['momentum'] = 0.9
+    cfg['teacher']['weight_decay'] = 5e-4
+    cfg['teacher']['nesterov'] = True
+    cfg['teacher']['scheduler_name'] = 'CosineAnnealingLR'
     if 'Blob' in cfg['data_name']:
-        cfg[model_name]['num_epochs'] = 100
-        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+        cfg['teacher']['num_epochs'] = 100
+        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     elif 'Friedman' in cfg['data_name']:
-        cfg[model_name]['num_epochs'] = 100
-        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+        cfg['teacher']['num_epochs'] = 100
+        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     elif 'MLP' in cfg['data_name']:
-        cfg[model_name]['num_epochs'] = 100
-        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+        cfg['teacher']['num_epochs'] = 100
+        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     elif cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        cfg[model_name]['num_epochs'] = 400
-        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
+        cfg['teacher']['num_epochs'] = 400
+        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
     cfg['stats'] = make_stats()

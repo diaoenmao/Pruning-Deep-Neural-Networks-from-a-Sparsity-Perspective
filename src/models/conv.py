@@ -1,23 +1,26 @@
 import torch
 import torch.nn as nn
 from config import cfg
-from .utils import init_param, loss_fn
+from .utils import init_param, loss_fn, normalize
 
 
 class Conv(nn.Module):
     def __init__(self, data_shape, hidden_size, target_size):
         super().__init__()
-        blocks = [nn.Conv2d(data_shape[0], hidden_size[0], 5, 1, 2),
+        blocks = [nn.Conv2d(data_shape[0], hidden_size[0], 3, 1, 1),
+                  nn.BatchNorm2d(hidden_size[0]),
                   nn.ReLU(inplace=True),
-                  nn.MaxPool2d(2),
-                  nn.Conv2d(hidden_size[0], hidden_size[1], 5, 1, 2),
-                  nn.ReLU(inplace=True),
-                  nn.MaxPool2d(2),
-                  nn.Flatten(),
-                  nn.Linear(64 * (data_shape[1] // 4) * (data_shape[2] // 4), 512),
-                  nn.ReLU(inplace=True),
-                  nn.Linear(512, target_size)]
+                  nn.MaxPool2d(2)]
+        for i in range(len(hidden_size) - 1):
+            blocks.extend([nn.Conv2d(hidden_size[i], hidden_size[i + 1], 3, 1, 1),
+                           nn.BatchNorm2d(hidden_size[i + 1]),
+                           nn.ReLU(inplace=True),
+                           nn.MaxPool2d(2)])
+        blocks = blocks[:-1]
+        blocks.extend([nn.AdaptiveAvgPool2d(1),
+                       nn.Flatten()])
         self.blocks = nn.Sequential(*blocks)
+        self.linear = nn.Linear(hidden_size[-1], target_size)
 
     def f(self, x):
         x = self.blocks(x)

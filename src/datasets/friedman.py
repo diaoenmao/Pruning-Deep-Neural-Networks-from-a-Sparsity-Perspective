@@ -66,7 +66,7 @@ class Friedman(Dataset):
         x, y = x[perm], y[perm]
         split_idx = int(x.shape[0] * 0.8)
         train_data, test_data = x[:split_idx].astype(np.float32), x[split_idx:].astype(np.float32)
-        train_target, test_target = y[:split_idx].astype(np.int64), y[split_idx:].astype(np.int64)
+        train_target, test_target = y[:split_idx].astype(np.float32), y[split_idx:].astype(np.float32)
         train_id, test_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(np.int64)
         target_size = 1
         return (train_id, train_data, train_target), (test_id, test_data, test_target), target_size

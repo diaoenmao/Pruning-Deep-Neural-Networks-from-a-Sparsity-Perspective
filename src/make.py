@@ -10,7 +10,10 @@ parser.add_argument('--round', default=4, type=int)
 parser.add_argument('--experiment_step', default=1, type=int)
 parser.add_argument('--num_experiments', default=1, type=int)
 parser.add_argument('--resume_mode', default=0, type=int)
-parser.add_argument('--file', default=None, type=str)
+parser.add_argument('--mode', default=None, type=str)
+parser.add_argument('--data', default=None, type=str)
+parser.add_argument('--model', default=None, type=str)
+parser.add_argument('--split_round', default=65535, type=int)
 args = vars(parser.parse_args())
 
 
@@ -33,40 +36,46 @@ def main():
     init_seed = args['init_seed']
     num_experiments = args['num_experiments']
     resume_mode = args['resume_mode']
-    file = args['file']
+    mode = args['mode']
+    data = args['data']
+    model = args['model']
+    split_round = args['split_round']
     gpu_ids = [','.join(str(i) for i in list(range(x, x + world_size))) for x in list(range(0, num_gpus, world_size))]
     init_seeds = [list(range(init_seed, init_seed + num_experiments, experiment_step))]
     world_size = [[world_size]]
     num_experiments = [[experiment_step]]
     resume_mode = [[resume_mode]]
-    filename = '{}_{}'.format(run, file)
-    file_list = file.split('_')
-    mode, model = file_list[0], file_list[1]
+    filename = '{}_{}_{}_{}'.format(run, mode, data, model)
     if mode == 'teacher':
         script_name = [['{}_teacher.py'.format(run)]]
-        control_name = [[['MNIST', 'CIFAR10', 'SVHN'], [model], ['1'], ['iid']]]
-        controls_1 = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
-        control_name = [[['MNIST', 'CIFAR10', 'SVHN'], [model], ['10'],
-                         ['iid', 'non-iid-l-2', 'non-iid-d-0.1', 'non-iid-d-0.3']]]
-        controls_10 = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
-        controls = controls_1 + controls_10
+        control_name = [[[data], [model]]]
+        controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
         raise ValueError('Not valid file')
     s = '#!/bin/bash\n'
-    k = 0
+    j = 1
+    k = 1
     for i in range(len(controls)):
         controls[i] = list(controls[i])
         s = s + 'CUDA_VISIBLE_DEVICES=\"{}\" python {} --init_seed {} --world_size {} --num_experiments {} ' \
-                '--resume_mode {} --control_name {}&\n'.format(gpu_ids[k % len(gpu_ids)], *controls[i])
-        if k % round == round - 1:
+                '--resume_mode {} --control_name {}&\n'.format(gpu_ids[i % len(gpu_ids)], *controls[i])
+        if i % round == round - 1:
             s = s[:-2] + '\nwait\n'
-        k = k + 1
-    if s[-5:-1] != 'wait':
-        s = s + 'wait\n'
-    print(s)
-    run_file = open('./{}.sh'.format(filename), 'w')
-    run_file.write(s)
-    run_file.close()
+            if j % split_round == 0:
+                print(s)
+                run_file = open('./{}_{}.sh'.format(filename, k), 'w')
+                run_file.write(s)
+                run_file.close()
+                s = '#!/bin/bash\n'
+                k = k + 1
+            j = j + 1
+    if s != '#!/bin/bash\n':
+        if s[-5:-1] != 'wait':
+            s = s + 'wait\n'
+        print(s)
+        run_file = open('./{}_{}.sh'.format(filename, k), 'w')
+        run_file.write(s)
+        run_file.close()
     return
 
 

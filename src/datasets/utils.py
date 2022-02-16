@@ -85,13 +85,11 @@ def check_integrity(path, md5=None):
     return check_md5(path, md5)
 
 
-def download_url(url, root, filename, md5):
+def download_url(url, path, md5):
     from six.moves import urllib
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'pytorch/vision')]
     urllib.request.install_opener(opener)
-    path = os.path.join(root, filename)
-    makedir_exist_ok(root)
     if os.path.isfile(path) and check_integrity(path, md5):
         print('Using downloaded and verified file: ' + path)
     else:

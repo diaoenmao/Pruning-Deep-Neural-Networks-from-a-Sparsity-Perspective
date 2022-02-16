@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import init_param, loss_fn
+from .utils import init_param, loss_fn, normalize
 from config import cfg
 
 

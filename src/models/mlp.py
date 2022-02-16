@@ -30,6 +30,8 @@ class MLP(nn.Module):
     def forward(self, input):
         output = {}
         x = normalize(input['data'])
+        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+            x = x.reshape(x.size(0), -1)
         x = self.f(x)
         output['target'] = x
         if 'target' in input:
