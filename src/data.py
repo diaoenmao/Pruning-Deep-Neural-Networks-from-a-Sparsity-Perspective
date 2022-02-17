@@ -22,7 +22,7 @@ def fetch_dataset(data_name, verbose=True):
     root = os.path.join('.', 'data', data_name)
     if 'Blob' in data_name:
         root = os.path.join('.', 'data', 'Blob')
-        dataset['train'] = datasets.Blob(root='Blob', split='train', num_samples=cfg['Blob']['num_samples'],
+        dataset['train'] = datasets.Blob(root=root, split='train', num_samples=cfg['Blob']['num_samples'],
                                          num_features=cfg['Blob']['num_features'],
                                          num_centers=cfg['Blob']['num_centers'], noise=cfg['Blob']['noise'])
         dataset['test'] = datasets.Blob(root=root, split='test', num_samples=cfg['Blob']['num_samples'],
