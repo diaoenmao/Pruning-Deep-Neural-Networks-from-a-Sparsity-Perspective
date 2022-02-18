@@ -52,7 +52,6 @@ def test(p, model):
     for i in range(len(p)):
         sparsity_index_i = make_sparsity_index(model, p[i])
         sparsity_index.append(sparsity_index_i)
-        print(sparsity_index_i)
     return sparsity_index
 
 

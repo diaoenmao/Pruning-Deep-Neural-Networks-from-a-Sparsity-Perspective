@@ -47,7 +47,12 @@ def main():
     resume_mode = [[resume_mode]]
     filename = '{}_{}_{}_{}'.format(run, mode, data, model)
     if mode in ['teacher', 'si']:
-        script_name = [['{}_{}.py'.format(run, mode)]]
+        if mode == 'teacher':
+            script_name = [['{}_teacher.py'.format(run)]]
+        elif mode == 'si':
+            script_name = [['{}_sparsity_index.py'.format(run)]]
+        else:
+            raise ValueError('Not valid mode')
         if data == 'MLP':
             data_name_r = [['MLP'], ['r'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
                            ['sigmoid', 'relu'], ['1'], ['1.0'], ['0', '0.5']]
@@ -114,8 +119,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-"""
-python make.py --mode teacher --data Blob-500-64-10-1.0 --model mlp
-python make.py --mode teacher --data Friedman-500-64-1.0 --model mlp
-python make.py --mode teacher --data MLP-500-64-64-1-2-sigmoid --model mlp
-"""
