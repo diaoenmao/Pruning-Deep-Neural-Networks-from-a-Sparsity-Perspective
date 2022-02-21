@@ -12,5 +12,6 @@ from utils import to_device, collate, make_optimizer, make_scheduler
 def make_sparsity_index(model, q):
     sparsity_index = OrderedDict()
     for k, v in model.state_dict().items():
-        sparsity_index[k] = torch.linalg.norm(v, 1, dim=-1) / torch.linalg.norm(v, q, dim=-1)
+        if 'weight' in k:
+            sparsity_index[k] = torch.linalg.norm(v, 1, dim=-1) / torch.linalg.norm(v, q, dim=-1)
     return sparsity_index

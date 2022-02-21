@@ -88,7 +88,7 @@ def main():
             control_name = [[data_name, model_name]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
-        raise ValueError('Not valid file')
+        raise ValueError('Not valid mode')
     s = '#!/bin/bash\n'
     j = 1
     k = 1

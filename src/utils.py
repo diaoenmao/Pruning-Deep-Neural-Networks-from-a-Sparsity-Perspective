@@ -270,3 +270,15 @@ def collate(input):
     for k in input:
         input[k] = torch.stack(input[k], 0)
     return input
+
+
+def make_layerwise_sparsity_index(model_state_dict):
+    sparsity_index = {'mean': [], 'std': []}
+    for i in range(len(model_state_dict)):
+        for k, v in model_state_dict[i].items():
+            if 'weight' in k:
+                mean = v.mean()
+                std = v.std() if len(v) > 1 else 0
+                sparsity_index['mean'].append(mean)
+                sparsity_index['std'].append(std)
+    return sparsity_index
