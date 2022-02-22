@@ -67,15 +67,15 @@ def main():
     controls = []
     for data_i in data:
         controls += make_control_list(data_i, 'mlp')
-    processed_result_exp, processed_result_history = process_result(controls)
-    save(processed_result_exp, os.path.join(result_path, 'processed_result_exp.pt'))
-    save(processed_result_history, os.path.join(result_path, 'processed_result_history.pt'))
-    extracted_processed_result_exp = {}
-    extracted_processed_result_history = {}
-    extract_processed_result(extracted_processed_result_exp, processed_result_exp, [])
-    extract_processed_result(extracted_processed_result_history, processed_result_history, [])
-    df_exp = make_df_result_exp(extracted_processed_result_exp)
-    df_history = make_df_result_history(extracted_processed_result_history)
+    # processed_result_exp, processed_result_history = process_result(controls)
+    # save(processed_result_exp, os.path.join(result_path, 'processed_result_exp.pt'))
+    # save(processed_result_history, os.path.join(result_path, 'processed_result_history.pt'))
+    # extracted_processed_result_exp = {}
+    # extracted_processed_result_history = {}
+    # extract_processed_result(extracted_processed_result_exp, processed_result_exp, [])
+    # extract_processed_result(extracted_processed_result_history, processed_result_history, [])
+    # df_exp = make_df_result_exp(extracted_processed_result_exp)
+    # df_history = make_df_result_history(extracted_processed_result_history)
     processed_si_exp = process_si(controls)
     save(processed_si_exp, os.path.join(si_path, 'processed_si_exp.pt'))
     extracted_processed_si_exp = {}
@@ -267,25 +267,19 @@ def extract_processed_si(extracted_processed_si, processed_si, control):
 
 
 def make_df_si_exp(extracted_processed_si_exp):
+    p = np.arange(1, 10) / 10
     df = defaultdict(list)
     for exp_name in extracted_processed_si_exp:
         control = exp_name.split('_')
         if len(control) == 2:
             data_name, model_name = control
             for k in extracted_processed_si_exp[exp_name]:
-                if 'MLP' in data_name:
-                    data_name_list = data_name.split('-')
-                    model_name_list = model_name.split('-')
-                    df_name = '{}_{}_{}'.format('-'.join(data_name_list[:-1]), '-'.join(model_name_list[:4]), k)
-                    index_name = ['{}_{}'.format(data_name_list[-1], '-'.join(model_name_list[4:]))]
+                df_name = '{}_{}_{}'.format(data_name, model_name, k)
+                si_exp_k = extracted_processed_si_exp[exp_name][k]
+                for i in range(len(si_exp_k)):
+                    index_name = [str(p[i])]
                     df[df_name].append(
-                        pd.DataFrame(data=extracted_processed_si_exp[exp_name][k].reshape(1, -1), index=index_name))
-                else:
-                    model_name_list = model_name.split('-')
-                    df_name = '{}_{}_{}'.format(data_name, '-'.join(model_name_list[:4]), k)
-                    index_name = ['-'.join(model_name_list[4:])]
-                    df[df_name].append(
-                        pd.DataFrame(data=extracted_processed_si_exp[exp_name][k].reshape(1, -1), index=index_name))
+                        pd.DataFrame(data=si_exp_k[i].reshape(1, -1), index=index_name))
     startrow = 0
     writer = pd.ExcelWriter('{}/si_exp.xlsx'.format(si_path), engine='xlsxwriter')
     for df_name in df:
@@ -298,34 +292,35 @@ def make_df_si_exp(extracted_processed_si_exp):
 
 
 def make_vis(df):
-    color = {'sigmoid': 'red', 'relu': 'blue', '0_sigmoid': 'red', '0.5_sigmoid': 'blue', '0_relu': 'red',
-             '0.5_relu': 'blue'}
-    linestyle = {'sigmoid': '-', 'relu': '--', '0_sigmoid': '-', '0.5_sigmoid': '--', '0_relu': '-', '0.5_relu': '--'}
-    label = {'sigmoid': 'Sigmoid', 'relu': 'ReLU', '0_sigmoid': '0 Sparsity, Sigmoid',
-             '0.5_sigmoid': '0.5 Sparsity, Sigmoid', '0_relu': '0 Sparsity, ReLU', '0.5_relu': '0.5 Sparsity, ReLU'}
+    color = {'0.1': 'red', '0.2': 'orange', '0.3': 'green', '0.4': 'blue', '0.5': 'purple', '0.6': 'brown',
+             '0.7': 'cyan', '0.8': 'gray', '0.9': 'black'}
+    linestyle = {'0.1': '-', '0.2': '--', '0.3': '-.', '0.4': (0, (1, 1)), '0.5': (0, (1, 5)), '0.6': (0, (1, 10)),
+                 '0.7': (0, (5, 1)), '0.8': (0, (5, 5)), '0.9': (0, (5, 10))}
+    marker = {'0.1': 'o', '0.2': 's', '0.3': 'v', '0.4': '^', '0.5': '<', '0.6': '>', '0.7': 'p', '0.8': 'P',
+              '0.9': '*'}
     loc_dict = {'si-mean': 'lower right'}
     fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
     fig = {}
     for df_name in df:
         df_name_list = df_name.split('_')
         if len(df_name_list) == 4:
-            data_name, part_model_name, metric_name, stat = df_name.split('_')
+            data_name, model_name, metric_name, stat = df_name.split('_')
             if stat == 'std' or 'std' in metric_name:
                 continue
-            df_name_std = '_'.join([data_name, part_model_name, 'si-std', 'mean'])
-            fig_name = '_'.join([data_name, part_model_name])
+            df_name_std = '_'.join([data_name, model_name, 'si-std', 'mean'])
+            fig_name = '_'.join([data_name, model_name])
             fig[fig_name] = plt.figure(fig_name)
             for ((index, row), (_, row_std)) in zip(df[df_name].iterrows(), df[df_name_std].iterrows()):
                 y = row.to_numpy()
                 yerr = row_std.to_numpy()
                 x = np.arange(len(y))
                 tag = index
-                plt.plot(x, y, color=color[tag], linestyle=linestyle[tag], label=label[tag])
+                plt.plot(x, y, color=color[tag], linestyle=linestyle[tag], label=float(tag), marker=marker[tag])
                 plt.fill_between(x, (y - yerr), (y + yerr), color=color[tag], alpha=.1)
                 plt.legend(loc=loc_dict[metric_name], fontsize=fontsize['legend'])
                 plt.xlabel('L', fontsize=fontsize['label'])
                 plt.ylabel('Sparsity Index', fontsize=fontsize['label'])
-                plt.xticks(fontsize=fontsize['ticks'])
+                plt.xticks(x, fontsize=fontsize['ticks'])
                 plt.yticks(fontsize=fontsize['ticks'])
     for fig_name in fig:
         fig[fig_name] = plt.figure(fig_name)

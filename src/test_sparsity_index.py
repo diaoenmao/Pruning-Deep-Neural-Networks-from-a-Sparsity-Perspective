@@ -40,7 +40,7 @@ def runExperiment():
     result = resume(cfg['model_tag'], load_tag='best')
     last_epoch = result['epoch']
     model.load_state_dict(result['model_state_dict'])
-    p = torch.arange(0.1, 0.9, 0.1)
+    p = (torch.arange(1, 10) / 10).tolist()
     sparsity_index = test(p, model)
     result = {'cfg': cfg, 'epoch': last_epoch, 'p': p, 'sparsity_index': sparsity_index}
     save(result, './output/sparsity_index/{}.pt'.format(cfg['model_tag']))
