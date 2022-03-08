@@ -3,6 +3,7 @@
 control:
   data_name: MNIST
   model_name: mlp
+  num_iters: 5
 # experiment
 num_workers: 0
 init_seed: 0

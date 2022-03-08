@@ -4,7 +4,7 @@ from config import cfg
 from .utils import init_param, loss_fn, normalize
 
 
-class Conv(nn.Module):
+class CNN(nn.Module):
     def __init__(self, data_shape, hidden_size, target_size):
         super().__init__()
         blocks = [nn.Conv2d(data_shape[0], hidden_size[0], 3, 1, 1),
@@ -36,7 +36,7 @@ class Conv(nn.Module):
         return output
 
 
-def conv():
+def cnn():
     data_shape = cfg['data_shape']
     target_size = cfg['target_size']
     hidden_size = cfg['conv']['hidden_size']

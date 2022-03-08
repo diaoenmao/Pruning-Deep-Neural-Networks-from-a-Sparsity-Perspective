@@ -114,6 +114,7 @@ def process_dataset(dataset):
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
+    cfg['num_iters'] = int(cfg['control']['num_iters'])
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     if 'Blob' in cfg['data_name']:
@@ -142,7 +143,7 @@ def process_control():
                       'num_layers': int(mlp_control_list[3]), 'activation': mlp_control_list[4]}
     else:
         cfg['model_name'] = cfg['control']['model_name']
-    cfg['conv'] = {'hidden_size': [64, 128, 256, 512]}
+    cfg['cnn'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
@@ -164,7 +165,7 @@ def process_control():
         cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     elif cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        cfg['teacher']['num_epochs'] = 400
+        cfg['teacher']['num_epochs'] = 1
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
@@ -251,18 +252,16 @@ def make_scheduler(optimizer, tag):
 
 
 def resume(model_tag, load_tag='checkpoint', verbose=True):
-    if os.path.exists('./output/model/{}_{}.pt'.format(model_tag, load_tag)):
-        result = load('./output/model/{}_{}.pt'.format(model_tag, load_tag))
+    if cfg['resume_mode'] == 1:
+        if os.path.exists('./output/model/{}_{}.pt'.format(model_tag, load_tag)):
+            result = load('./output/model/{}_{}.pt'.format(model_tag, load_tag))
+            if verbose:
+                print('Resume from {}'.format(result['epoch']))
+        else:
+            print('Not exists model tag: {}, start from scratch'.format(model_tag))
+            result = None
     else:
-        print('Not exists model tag: {}, start from scratch'.format(model_tag))
-        from datetime import datetime
-        from logger import Logger
-        last_epoch = 1
-        logger_path = 'output/runs/train_{}_{}'.format(cfg['model_tag'], datetime.now().strftime('%b%d_%H-%M-%S'))
-        logger = Logger(logger_path)
-        result = {'epoch': last_epoch, 'logger': logger}
-    if verbose:
-        print('Resume from {}'.format(result['epoch']))
+        result = None
     return result
 
 
