@@ -43,19 +43,16 @@ def runExperiment():
     optimizer = make_optimizer(model, 'teacher')
     scheduler = make_scheduler(optimizer, 'teacher')
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-    if cfg['resume_mode'] == 1:
-        result = resume(cfg['model_tag'])
-        last_epoch = result['epoch']
-        if last_epoch > 1:
-            model.load_state_dict(result['model_state_dict'])
-            optimizer.load_state_dict(result['optimizer_state_dict'])
-            scheduler.load_state_dict(result['scheduler_state_dict'])
-            logger = result['logger']
-        else:
-            logger = make_logger(os.path.join('output', 'runs', 'train_{}'.format(cfg['model_tag'])))
-    else:
+    result = resume(cfg['model_tag'])
+    if result is None:
         last_epoch = 1
         logger = make_logger(os.path.join('output', 'runs', 'train_{}'.format(cfg['model_tag'])))
+    else:
+        last_epoch = result['epoch']
+        model.load_state_dict(result['model_state_dict'])
+        optimizer.load_state_dict(result['optimizer_state_dict'])
+        scheduler.load_state_dict(result['scheduler_state_dict'])
+        logger = result['logger']
     for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
         train(data_loader['train'], model, optimizer, metric, logger, epoch)
         test(data_loader['test'], model, metric, logger, epoch)
