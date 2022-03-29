@@ -87,6 +87,18 @@ def main():
                 raise ValueError('Not valid model')
             control_name = [[data_name, model_name]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
+    elif mode == 'lt':
+        script_name = [['{}_teacher_lt.py'.format(run)]]
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['1', '2', '3', '4'], ['sigmoid', 'relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            raise ValueError('Not valid model')
+        control_name = [[data_name, model_name, ['5']]]
+        controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
         raise ValueError('Not valid mode')
     s = '#!/bin/bash\n'
@@ -118,4 +130,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

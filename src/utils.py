@@ -114,7 +114,8 @@ def process_dataset(dataset):
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
-    cfg['num_iters'] = int(cfg['control']['num_iters'])
+    if 'num_iters' in cfg['control']:
+        cfg['num_iters'] = int(cfg['control']['num_iters'])
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     if 'Blob' in cfg['data_name']:
@@ -169,6 +170,7 @@ def process_control():
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
+    cfg['prune_percent'] = 0.1
     cfg['stats'] = make_stats()
     return
 

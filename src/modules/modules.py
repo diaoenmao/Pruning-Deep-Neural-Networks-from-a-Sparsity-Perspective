@@ -20,7 +20,7 @@ def make_sparsity_index(model, q):
 class Compression:
     def __init__(self, model):
         self.init_model_state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
-        self.mask = [make_mask(init_model_state_dict)]
+        self.mask = [self.make_mask(self.init_model_state_dict)]
         self.prune_percent = cfg['prune_percent']
 
     def make_mask(self, model_state_dict):
@@ -28,7 +28,7 @@ class Compression:
         for name, param in model_state_dict.items():
             parameter_type = name.split('.')[-1]
             if 'weight' in parameter_type:
-                mask[name] = param.new_ones(param.size())
+                mask[name] = param.new_ones(param.size(), dtype=torch.bool)
         return mask
 
     def prune(self, model):
@@ -36,11 +36,14 @@ class Compression:
         for name, param in model.named_parameters():
             parameter_type = name.split('.')[-1]
             if 'weight' in parameter_type:
+                mask = self.mask[-1][name]
                 masked_param = param[mask]
                 pivot_param = masked_param.abs()
-                percentile_value = torch.quantile(pivot_param, percent)
-                new_mask[name] = torch.where(param.data.abs() < percentile_value, 0, mask)
-                param.data = copy.deepcopy((param.data * new_mask[name]).detach())
+                percentile_value = torch.quantile(pivot_param, self.prune_percent)
+                percentile_mask = (param.data.abs() < percentile_value).to('cpu')
+                new_mask[name] = torch.where(percentile_mask, False, mask)
+                param.data = torch.where(new_mask[name].to(param.device), param.data,
+                                         torch.tensor(0, dtype=torch.float, device=param.device))
         self.mask.append(new_mask)
         return
 
@@ -49,7 +52,17 @@ class Compression:
             parameter_type = name.split('.')[-1]
             if 'weight' in parameter_type:
                 mask = self.mask[-1][name]
-                param.data = copy.deepcopy((mask * self.init_model_state_dict[name]).detach())
+                param.data = torch.where(mask, self.init_model_state_dict[name],
+                                         torch.tensor(0, dtype=torch.float)).to(param.device)
             if "bias" in parameter_type:
-                param.data = copy.deepcopy(self.init_model_state_dict[name])
+                param.data = self.init_model_state_dict[name].to(param.device)
+        return
+
+    def freeze_grad(self, model):
+        for name, param in model.named_parameters():
+            parameter_type = name.split('.')[-1]
+            if 'weight' in parameter_type:
+                mask = self.mask[-1][name]
+                param.grad.data = torch.where(mask.to(param.device), param.grad.data,
+                                              torch.tensor(0, dtype=torch.float, device=param.device))
         return
