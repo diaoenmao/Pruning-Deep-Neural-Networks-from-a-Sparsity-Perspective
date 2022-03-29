@@ -12,6 +12,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, make_optimizer, make_scheduler, resume, collate
 from logger import make_logger
+from modules import Compression
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -41,6 +42,7 @@ def runExperiment():
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, 'teacher')
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
+    compression = Compression(model)
     optimizer = make_optimizer(model, 'teacher')
     scheduler = make_scheduler(optimizer, 'teacher')
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
@@ -48,9 +50,6 @@ def runExperiment():
     if result is None:
         last_iter = 1
         last_epoch = 1
-        init_model_state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
-        init_optimizer_state_dict = copy.deepcopy(optimizer.state_dict())
-        init_scheduler_state_dict = copy.deepcopy(scheduler.state_dict())
         logger = make_logger(os.path.join('output', 'runs', 'train_{}'.format(cfg['model_tag'])))
     else:
         last_iter = result['iter']
@@ -58,18 +57,18 @@ def runExperiment():
         model.load_state_dict(result['model_state_dict'])
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
-        init_model_state_dict = result['init_model_state_dict']
-        init_optimizer_state_dict = result['init_optimizer_state_dict']
-        init_scheduler_state_dict = result['init_scheduler_state_dict']
+        compression = result['compression']
         logger = result['logger']
     for iter in range(last_iter, cfg['num_iters'] + 1):
+        compression.prune(model)
+        compression.init(model)
         for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
-            train(data_loader['train'], model, optimizer, metric, logger, iter, epoch)
+            train(data_loader['train'], model, compression, optimizer, metric, logger, iter, epoch)
             test(data_loader['test'], model, metric, logger, iter, epoch)
             scheduler.step()
             result = {'cfg': cfg, 'epoch': epoch + 1, 'iter': iter, 'model_state_dict': model.state_dict(),
                       'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
-                      'logger': logger}
+                      'compression': compression, 'logger': logger}
             save(result, './output/model/{}/{}_checkpoint.pt'.format(iter, cfg['model_tag']))
             if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
                 metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
@@ -79,7 +78,7 @@ def runExperiment():
     return
 
 
-def train(data_loader, model, optimizer, metric, logger, iter, epoch):
+def train(data_loader, model, compression, optimizer, metric, logger, iter, epoch):
     logger.safe(True)
     model.train(True)
     start_time = time.time()
@@ -92,6 +91,7 @@ def train(data_loader, model, optimizer, metric, logger, iter, epoch):
         output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
         output['loss'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
+        compression.freeze_grad(model)
         optimizer.step()
         evaluation = metric.evaluate(metric.metric_name['train'], input, output)
         logger.append(evaluation, 'train', n=input_size)
