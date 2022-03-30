@@ -46,13 +46,8 @@ def main():
     num_experiments = [[experiment_step]]
     resume_mode = [[resume_mode]]
     filename = '{}_{}_{}_{}'.format(run, mode, data, model)
-    if mode in ['teacher', 'si']:
-        if mode == 'teacher':
-            script_name = [['{}_teacher.py'.format(run)]]
-        elif mode == 'si':
-            script_name = [['{}_sparsity_index.py'.format(run)]]
-        else:
-            raise ValueError('Not valid mode')
+    if mode == 'teacher':
+        script_name = [['{}_teacher.py'.format(run)]]
         if data == 'MLP':
             data_name_r = [['MLP'], ['r'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
                            ['sigmoid', 'relu'], ['1'], ['1.0'], ['0', '0.5']]

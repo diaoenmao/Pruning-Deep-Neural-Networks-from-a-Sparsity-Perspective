@@ -9,12 +9,22 @@ from config import cfg
 from utils import to_device, collate, make_optimizer, make_scheduler
 
 
-def make_sparsity_index(model, q):
-    sparsity_index = OrderedDict()
-    for k, v in model.state_dict().items():
-        if 'weight' in k:
-            sparsity_index[k] = torch.linalg.norm(v, 1, dim=-1) / torch.linalg.norm(v, q, dim=-1)
-    return sparsity_index
+class SparsityIndex:
+    def __init__(self, q):
+        self.q = q
+        self.si = []
+
+    def make_sparsity_index(self, model):
+        si = []
+        for i in range(len(self.q)):
+            si_i = OrderedDict()
+            for name, param in model.state_dict().items():
+                parameter_type = name.split('.')[-1]
+                if 'weight' in parameter_type:
+                    si_i[name] = torch.linalg.norm(param, 1, dim=-1) / torch.linalg.norm(param, self.q[i], dim=-1)
+            si.append(si_i)
+        self.si.append(si)
+        return
 
 
 class Compression:

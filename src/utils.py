@@ -156,6 +156,7 @@ def process_control():
     cfg['teacher']['weight_decay'] = 5e-4
     cfg['teacher']['nesterov'] = True
     cfg['teacher']['scheduler_name'] = 'CosineAnnealingLR'
+    # cfg['teacher']['scheduler_name'] = 'None'
     if 'Blob' in cfg['data_name']:
         cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
@@ -166,10 +167,11 @@ def process_control():
         cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     elif cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        cfg['teacher']['num_epochs'] = 1
+        cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
+    cfg['q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     cfg['prune_percent'] = 0.1
     cfg['stats'] = make_stats()
     return
@@ -253,16 +255,14 @@ def make_scheduler(optimizer, tag):
     return scheduler
 
 
-def resume(model_tag, load_tag='checkpoint', verbose=True):
-    if cfg['resume_mode'] == 1:
-        if os.path.exists('./output/model/{}_{}.pt'.format(model_tag, load_tag)):
-            result = load('./output/model/{}_{}.pt'.format(model_tag, load_tag))
-            if verbose:
-                print('Resume from {}'.format(result['epoch']))
-        else:
-            print('Not exists model tag: {}, start from scratch'.format(model_tag))
-            result = None
+def resume(path, verbose=True, resume_mode=1):
+    if os.path.exists(path) and resume_mode == 1:
+        result = load(path)
+        if verbose:
+            print('Resume from {}'.format(result['epoch']))
     else:
+        if resume_mode == 1:
+            print('Not exists: {}'.format(path))
         result = None
     return result
 

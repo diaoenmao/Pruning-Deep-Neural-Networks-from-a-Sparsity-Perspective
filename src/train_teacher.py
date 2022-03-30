@@ -11,6 +11,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, make_optimizer, make_scheduler, resume, collate
 from logger import make_logger
+from modules import SparsityIndex
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -40,10 +41,11 @@ def runExperiment():
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, 'teacher')
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
+    sparsity_index = SparsityIndex(cfg['q'])
     optimizer = make_optimizer(model, 'teacher')
     scheduler = make_scheduler(optimizer, 'teacher')
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-    result = resume(cfg['model_tag'])
+    result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'), resume_mode=cfg['resume_mode'])
     if result is None:
         last_epoch = 1
         logger = make_logger(os.path.join('output', 'runs', 'train_{}'.format(cfg['model_tag'])))
@@ -52,14 +54,15 @@ def runExperiment():
         model.load_state_dict(result['model_state_dict'])
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
+        sparsity_index = result['sparsity_index']
         logger = result['logger']
     for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
         train(data_loader['train'], model, optimizer, metric, logger, epoch)
-        test(data_loader['test'], model, metric, logger, epoch)
+        test(data_loader['test'], model, sparsity_index, metric, logger, epoch)
         scheduler.step()
         result = {'cfg': cfg, 'epoch': epoch + 1, 'model_state_dict': model.state_dict(),
                   'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
-                  'logger': logger}
+                  'sparsity_index': sparsity_index, 'logger': logger}
         save(result, './output/model/{}_checkpoint.pt'.format(cfg['model_tag']))
         if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
             metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
@@ -101,7 +104,7 @@ def train(data_loader, model, optimizer, metric, logger, epoch):
     return
 
 
-def test(data_loader, model, metric, logger, epoch):
+def test(data_loader, model, sparsity_index, metric, logger, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -116,6 +119,7 @@ def test(data_loader, model, metric, logger, epoch):
         info = {'info': ['Model: {}'.format(cfg['model_tag']), 'Test Epoch: {}({:.0f}%)'.format(epoch, 100.)]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
+    sparsity_index.make_sparsity_index(model)
     logger.safe(False)
     return
 

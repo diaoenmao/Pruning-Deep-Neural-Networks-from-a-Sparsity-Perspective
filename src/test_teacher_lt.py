@@ -38,24 +38,27 @@ def runExperiment():
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, 'teacher')
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    test_sparsity_index = SparsityIndex(cfg['q'])
-    result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'best'))
-    last_epoch = result['epoch']
-    model.load_state_dict(result['model_state_dict'])
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
+    test_sparsity_index = SparsityIndex(cfg['q'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
-    test(data_loader['test'], model, test_sparsity_index, metric, test_logger, last_epoch)
+    last_iter = 1
+    for iter in range(last_iter, cfg['num_iters'] + 1):
+        result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter, 'best'))
+        if result is not None:
+            last_epoch = result['epoch']
+            model.load_state_dict(result['model_state_dict'])
+            test(data_loader['test'], model, test_sparsity_index, metric, test_logger, iter, last_epoch)
+        test_logger.reset()
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
     train_sparsity_index = result['sparsity_index'] if 'sparsity_index' in result else None
     train_logger = result['logger'] if 'logger' in result else None
-    result = {'cfg': cfg, 'epoch': last_epoch,
-              'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
+    result = {'cfg': cfg, 'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
 
 
-def test(data_loader, model, sparsity_index, metric, logger, epoch):
+def test(data_loader, model, sparsity_index, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -67,7 +70,9 @@ def test(data_loader, model, sparsity_index, metric, logger, epoch):
             output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
-        info = {'info': ['Model: {}'.format(cfg['model_tag']), 'Test Epoch: {}({:.0f}%)'.format(epoch, 100.)]}
+        info = {'info': ['Model: {}'.format(cfg['model_tag']),
+                         'Test Epoch: {}({:.0f}%)'.format(epoch, 100.),
+                         'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model)
