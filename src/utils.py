@@ -156,7 +156,6 @@ def process_control():
     cfg['teacher']['weight_decay'] = 5e-4
     cfg['teacher']['nesterov'] = True
     cfg['teacher']['scheduler_name'] = 'CosineAnnealingLR'
-    # cfg['teacher']['scheduler_name'] = 'None'
     if 'Blob' in cfg['data_name']:
         cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}

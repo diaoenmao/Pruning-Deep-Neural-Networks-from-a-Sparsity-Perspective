@@ -47,18 +47,19 @@ def runExperiment():
         if result is not None:
             last_epoch = result['epoch']
             model.load_state_dict(result['model_state_dict'])
-            test(data_loader['test'], model, test_sparsity_index, metric, test_logger, iter, last_epoch)
+            compression = result['compression']
+            test(data_loader['test'], model, compression, test_sparsity_index, metric, test_logger, iter, last_epoch)
         test_logger.reset()
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
-    train_sparsity_index = result['sparsity_index'] if 'sparsity_index' in result else None
-    train_logger = result['logger'] if 'logger' in result else None
+    train_sparsity_index = result['sparsity_index']
+    train_logger = result['logger']
     result = {'cfg': cfg, 'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
 
 
-def test(data_loader, model, sparsity_index, metric, logger, iter, epoch):
+def test(data_loader, model, compression, sparsity_index, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -75,7 +76,7 @@ def test(data_loader, model, sparsity_index, metric, logger, iter, epoch):
                          'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model)
+    sparsity_index.make_sparsity_index(model, compression.mask[iter - 1])
     logger.safe(False)
     return
 

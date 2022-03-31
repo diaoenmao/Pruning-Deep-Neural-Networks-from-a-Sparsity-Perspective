@@ -92,7 +92,7 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['5']]]
+        control_name = [[data_name, model_name, ['50']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
         raise ValueError('Not valid mode')

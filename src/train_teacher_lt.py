@@ -63,6 +63,8 @@ def runExperiment():
         logger = result['logger']
     for iter in range(last_iter, cfg['num_iters'] + 1):
         if iter != last_iter and last_epoch == 1:
+            result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter - 1, 'best'))
+            model.load_state_dict(result['model_state_dict'])
             compression.prune(model)
             compression.init(model)
             optimizer = make_optimizer(model, 'teacher')
@@ -70,7 +72,7 @@ def runExperiment():
             metric = Metric({'train': ['Loss'], 'test': ['Loss']})
         for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
             train(data_loader['train'], model, compression, optimizer, metric, logger, iter, epoch)
-            test(data_loader['test'], model, sparsity_index, metric, logger, iter, epoch)
+            test(data_loader['test'], model, compression, sparsity_index, metric, logger, iter, epoch)
             scheduler.step()
             result = {'cfg': cfg, 'epoch': epoch + 1, 'iter': iter, 'model_state_dict': model.state_dict(),
                       'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
@@ -105,8 +107,9 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
             batch_time = (time.time() - start_time) / (i + 1)
             lr = optimizer.param_groups[0]['lr']
             epoch_finished_time = datetime.timedelta(seconds=round(batch_time * (len(data_loader) - i - 1)))
-            exp_finished_time = epoch_finished_time + datetime.timedelta(
-                seconds=round((cfg['teacher']['num_epochs'] - epoch) * batch_time * len(data_loader)))
+            exp_finished_time = (epoch_finished_time + datetime.timedelta(
+                seconds=round((cfg['teacher']['num_epochs'] - epoch) * batch_time * len(data_loader)))) * \
+                                cfg['num_iters']
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
                              'Train Iter: {}/{}'.format(iter, cfg['num_iters']),
@@ -118,7 +121,7 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
     return
 
 
-def test(data_loader, model, sparsity_index, metric, logger, iter, epoch):
+def test(data_loader, model, compression, sparsity_index, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -135,7 +138,7 @@ def test(data_loader, model, sparsity_index, metric, logger, iter, epoch):
                          'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model)
+    sparsity_index.make_sparsity_index(model, compression.mask[-1])
     logger.safe(False)
     return
 

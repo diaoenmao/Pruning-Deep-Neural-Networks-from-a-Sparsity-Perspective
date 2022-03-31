@@ -14,13 +14,15 @@ class SparsityIndex:
         self.q = q
         self.si = []
 
-    def make_sparsity_index(self, model):
+    def make_sparsity_index(self, model, mask=None):
         si = []
         for i in range(len(self.q)):
             si_i = OrderedDict()
             for name, param in model.state_dict().items():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
+                    if mask is not None:
+                        param = param * mask[name].to(param.device).float()
                     si_i[name] = torch.linalg.norm(param, 1, dim=-1) / torch.linalg.norm(param, self.q[i], dim=-1)
             si.append(si_i)
         self.si.append(si)

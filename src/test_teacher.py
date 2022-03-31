@@ -46,8 +46,8 @@ def runExperiment():
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     test(data_loader['test'], model, test_sparsity_index, metric, test_logger, last_epoch)
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
-    train_sparsity_index = result['sparsity_index'] if 'sparsity_index' in result else None
-    train_logger = result['logger'] if 'logger' in result else None
+    train_sparsity_index = result['sparsity_index']
+    train_logger = result['logger']
     result = {'cfg': cfg, 'epoch': last_epoch,
               'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
               'logger': {'train': train_logger, 'test': test_logger}}
