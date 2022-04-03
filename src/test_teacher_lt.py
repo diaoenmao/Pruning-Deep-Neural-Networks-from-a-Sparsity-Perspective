@@ -53,7 +53,10 @@ def runExperiment():
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
     train_sparsity_index = result['sparsity_index']
     train_logger = result['logger']
-    result = {'cfg': cfg, 'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
+    compression = result['compression']
+    compression.init_model_state_dict = None
+    result = {'cfg': cfg, 'compression': compression,
+              'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
