@@ -224,7 +224,7 @@ def make_df_result(extracted_processed_result, mode_name):
 
 
 def make_vis(df, mode_name):
-    xlabel_dict = {'exp': 'Epoch', 'history': 'Iteration'}
+    xlabel_dict = {'exp': 'Iteration', 'history': 'Epoch'}
     ylabel_dict = {'Loss': 'Loss', 'Accuracy': 'Accuracy', 'SI': 'Sparsity Index', 'CR': 'Compression Ratio'}
     fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
     loc_dict = {'Loss': 'lower right', 'Accuracy': 'lower right', 'SI': 'lower right', 'CR': 'upper right'}
