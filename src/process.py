@@ -78,8 +78,8 @@ def make_control_list(mode, data, model):
 
 
 def main():
-    # data = ['Blob', 'Friedman', 'MLP', 'MNIST']
-    data = ['MNIST']
+    data = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']
+    # data = ['MNIST', 'FashionMNIST']
     controls = []
     for data_i in data:
         controls += make_control_list('lt', data_i, 'mlp')
@@ -126,7 +126,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                 si_i = []
                 for m in range(len(base_result['sparsity_index']['test'].si)):
                     si_i_m = make_si(base_result['sparsity_index']['test'].si[m][i])
-                    si_i.append(si_i_m)
+                    si_i.extend(si_i_m)
                 processed_result_exp[metric_name]['exp'][exp_idx] = si_i
             metric_name = 'CR'
             if metric_name not in processed_result_exp:
@@ -149,7 +149,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                 si_i = []
                 for m in range(len(base_result['sparsity_index']['train'].si)):
                     si_i_m = make_si(base_result['sparsity_index']['train'].si[m][i])
-                    si_i.append(si_i_m)
+                    si_i.extend(si_i_m)
                 processed_result_history[metric_name]['history'][exp_idx] = si_i
         else:
             print('Missing {}'.format(base_result_path_i))
@@ -212,46 +212,69 @@ def make_df_result(extracted_processed_result, mode_name):
             index_name = [0]
             df[df_name].append(
                 pd.DataFrame(data=extracted_processed_result[exp_name][k].reshape(1, -1), index=index_name))
-    startrow = 0
-    writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode_name), engine='xlsxwriter')
+    # startrow = 0
+    # writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode_name), engine='xlsxwriter')
     for df_name in df:
         df[df_name] = pd.concat(df[df_name])
-        df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
-        writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
-        startrow = startrow + len(df[df_name].index) + 3
-    writer.save()
+    #     df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
+    #     writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
+    #     startrow = startrow + len(df[df_name].index) + 3
+    # writer.save()
     return df
 
 
 def make_vis(df, mode_name):
     xlabel_dict = {'exp': 'Iteration', 'history': 'Epoch'}
     ylabel_dict = {'Loss': 'Loss', 'Accuracy': 'Accuracy', 'SI': 'Sparsity Index', 'CR': 'Compression Ratio'}
+    color_dict = {'MNIST': 'red', 'FashionMNIST': 'orange', 'CIFAR10': 'blue', 'CIFAR100': 'green', 'SVHN': 'cyan'}
+    linestyle_dict = {'MNIST': '-', 'FashionMNIST': '--', 'CIFAR10': '-.', 'CIFAR100': ':','SVHN': (0, (1, 5))}
     fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
     loc_dict = {'Loss': 'lower right', 'Accuracy': 'lower right', 'SI': 'lower right', 'CR': 'upper right'}
     fig = {}
+    num_iters = None
     for df_name in df:
         df_name_list = df_name.split('_')
+        data_name = df_name_list[0]
         metric_name, stat = df_name_list[-2], df_name_list[-1]
         if stat == 'std':
             continue
         if 'SI' in metric_name:
             metric_name, p = metric_name.split('-')
-            label = 'p={}'.format(p)
+            label = data_name
+            df_name_std = '_'.join([*df_name_list[:-1], 'std'])
+            y = df[df_name].iloc[0].to_numpy()
+            y_err = df[df_name_std].iloc[0].to_numpy()
+            y = y.reshape((num_iters, -1))
+            y_err = y_err.reshape((num_iters, -1))
+            for i in range(y.shape[-1]):
+                y_i, y_err_i = y[:, i], y_err[:, i]
+                fig_name = '_'.join(df_name_list[1:-1] + [p] + [str(i)])
+                fig[fig_name] = plt.figure(fig_name)
+                x_i = np.arange(len(y_i))
+                plt.plot(x_i, y_i, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
+                plt.fill_between(x_i, (y_i - y_err_i), (y_i + y_err_i), color='r', alpha=.1)
+                plt.legend(loc=loc_dict[metric_name], fontsize=fontsize['legend'])
+                plt.xlabel(xlabel_dict[mode_name], fontsize=fontsize['label'])
+                plt.ylabel(ylabel_dict[metric_name], fontsize=fontsize['label'])
+                plt.xticks(fontsize=fontsize['ticks'])
+                plt.yticks(fontsize=fontsize['ticks'])
         else:
-            label = ylabel_dict[metric_name]
-        df_name_std = '_'.join([*df_name_list[:-1], 'std'])
-        fig_name = '_'.join(df_name_list[:-1])
-        fig[fig_name] = plt.figure(fig_name)
-        y = df[df_name].iloc[0].to_numpy()
-        y_err = df[df_name_std].iloc[0].to_numpy()
-        x = np.arange(len(y))
-        plt.plot(x, y, color='r', linestyle='-', label=label)
-        plt.fill_between(x, (y - y_err), (y + y_err), color='r', alpha=.1)
-        plt.legend(loc=loc_dict[metric_name], fontsize=fontsize['legend'])
-        plt.xlabel(xlabel_dict[mode_name], fontsize=fontsize['label'])
-        plt.ylabel(ylabel_dict[metric_name], fontsize=fontsize['label'])
-        plt.xticks(fontsize=fontsize['ticks'])
-        plt.yticks(fontsize=fontsize['ticks'])
+            label = data_name
+            df_name_std = '_'.join([*df_name_list[:-1], 'std'])
+            y = df[df_name].iloc[0].to_numpy()
+            y_err = df[df_name_std].iloc[0].to_numpy()
+            x = np.arange(len(y))
+            if num_iters is None:
+                num_iters = len(y)
+            fig_name = '_'.join(df_name_list[1:-1])
+            fig[fig_name] = plt.figure(fig_name)
+            plt.plot(x, y, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
+            plt.fill_between(x, (y - y_err), (y + y_err), color='r', alpha=.1)
+            plt.legend(loc=loc_dict[metric_name], fontsize=fontsize['legend'])
+            plt.xlabel(xlabel_dict[mode_name], fontsize=fontsize['label'])
+            plt.ylabel(ylabel_dict[metric_name], fontsize=fontsize['label'])
+            plt.xticks(fontsize=fontsize['ticks'])
+            plt.yticks(fontsize=fontsize['ticks'])
     for fig_name in fig:
         fig[fig_name] = plt.figure(fig_name)
         plt.grid()
@@ -268,7 +291,6 @@ def make_si(input):
     for name, param in input.items():
         valid_param = param[~param.isnan()]
         si.append(valid_param.mean())
-    si = (sum(si) / len(si)).item()
     return si
 
 
