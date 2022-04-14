@@ -79,7 +79,7 @@ def make_control_list(mode, data, model):
 
 def main():
     data = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']
-    # data = ['MNIST', 'FashionMNIST']
+    # data = ['MNIST']
     controls = []
     for data_i in data:
         controls += make_control_list('lt', data_i, 'mlp')
@@ -134,7 +134,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
             cr = []
             for m in range(len(base_result['compression'].mask)):
                 cr_m = make_cr(base_result['compression'].mask[m])
-                cr.append(cr_m)
+                cr.extend(cr_m)
             processed_result_exp[metric_name]['exp'][exp_idx] = cr
             for k in base_result['logger']['train'].history:
                 metric_name = k.split('/')[1]
@@ -248,7 +248,26 @@ def make_vis(df, mode_name):
             y_err = y_err.reshape((num_iters, -1))
             for i in range(y.shape[-1]):
                 y_i, y_err_i = y[:, i], y_err[:, i]
-                fig_name = '_'.join(df_name_list[1:-1] + [p] + [str(i)])
+                fig_name = '_'.join(df_name_list[1:-1] + [str(i)])
+                fig[fig_name] = plt.figure(fig_name)
+                x_i = np.arange(len(y_i))
+                plt.plot(x_i, y_i, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
+                plt.fill_between(x_i, (y_i - y_err_i), (y_i + y_err_i), color='r', alpha=.1)
+                plt.legend(loc=loc_dict[metric_name], fontsize=fontsize['legend'])
+                plt.xlabel(xlabel_dict[mode_name], fontsize=fontsize['label'])
+                plt.ylabel(ylabel_dict[metric_name], fontsize=fontsize['label'])
+                plt.xticks(fontsize=fontsize['ticks'])
+                plt.yticks(fontsize=fontsize['ticks'])
+        elif 'CR' in metric_name:
+            label = data_name
+            df_name_std = '_'.join([*df_name_list[:-1], 'std'])
+            y = df[df_name].iloc[0].to_numpy()
+            y_err = df[df_name_std].iloc[0].to_numpy()
+            y = y.reshape((num_iters, -1))
+            y_err = y_err.reshape((num_iters, -1))
+            for i in range(y.shape[-1]):
+                y_i, y_err_i = y[:, i], y_err[:, i]
+                fig_name = '_'.join(df_name_list[1:-1] + ['CR-{}'.format(str(i))])
                 fig[fig_name] = plt.figure(fig_name)
                 x_i = np.arange(len(y_i))
                 plt.plot(x_i, y_i, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
@@ -297,8 +316,8 @@ def make_si(input):
 def make_cr(input):
     cr = []
     for name, param in input.items():
-        cr.append(param.view(-1))
-    cr = torch.cat(cr).float().mean().item()
+        mask = param.view(-1)
+        cr.append(mask.float().mean().item())
     return cr
 
 
