@@ -267,7 +267,7 @@ def make_vis(df, mode_name):
             y_err = y_err.reshape((num_iters, -1))
             for i in range(y.shape[-1]):
                 y_i, y_err_i = y[:, i], y_err[:, i]
-                fig_name = '_'.join(df_name_list[1:-1] + ['CR-{}'.format(str(i))])
+                fig_name = '_'.join(df_name_list[1:-1] + [str(i)])
                 fig[fig_name] = plt.figure(fig_name)
                 x_i = np.arange(len(y_i))
                 plt.plot(x_i, y_i, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
