@@ -39,7 +39,7 @@ def runExperiment():
     data_loader = make_data_loader(dataset, 'teacher')
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-    test_sparsity_index = SparsityIndex(cfg['q'])
+    sparsity_index = SparsityIndex(cfg['q'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     last_iter = 1
     for iter in range(last_iter, cfg['num_iters'] + 1):
@@ -48,15 +48,13 @@ def runExperiment():
             last_epoch = result['epoch']
             model.load_state_dict(result['model_state_dict'])
             compression = result['compression']
-            test(data_loader['test'], model, compression, test_sparsity_index, metric, test_logger, iter, last_epoch)
+            test(data_loader['test'], model, compression, sparsity_index, metric, test_logger, iter, last_epoch)
         test_logger.reset()
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
-    train_sparsity_index = result['sparsity_index']
     train_logger = result['logger']
     compression = result['compression']
     compression.init_model_state_dict = None
-    result = {'cfg': cfg, 'compression': compression,
-              'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
+    result = {'cfg': cfg, 'compression': compression, 'sparsity_index': sparsity_index,
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
@@ -71,7 +69,6 @@ def test(data_loader, model, compression, sparsity_index, metric, logger, iter, 
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
-            output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']),

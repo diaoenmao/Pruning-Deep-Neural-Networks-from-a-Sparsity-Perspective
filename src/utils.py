@@ -116,8 +116,8 @@ def process_control():
     cfg['data_name'] = cfg['control']['data_name']
     if 'prune_iters' in cfg['control']:
         cfg['prune_iters'] = int(cfg['control']['prune_iters'])
-        cfg['prune_ratio'] = int(cfg['control']['prune_ratio'])
-        cfg['prune_mode'] = int(cfg['control']['prune_mode'])
+        cfg['prune_ratio'] = float(cfg['control']['prune_ratio'])
+        cfg['prune_mode'] = cfg['control']['prune_mode'].split('-')
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     cfg['data_shape'] = data_shape[cfg['data_name']]

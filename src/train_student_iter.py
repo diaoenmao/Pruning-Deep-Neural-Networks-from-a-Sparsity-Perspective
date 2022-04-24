@@ -29,6 +29,8 @@ def main():
     for i in range(cfg['num_experiments']):
         model_tag_list = [str(seeds[i]), cfg['control_name']]
         cfg['model_tag'] = '_'.join([x for x in model_tag_list if x])
+        teacher_model_tag_list = [str(seeds[i]), '_'.join(cfg['control_name'].split('_')[:2])]
+        cfg['teacher_model_tag'] = '_'.join([x for x in teacher_model_tag_list if x])
         print('Experiment: {}'.format(cfg['model_tag']))
         runExperiment()
     return
@@ -40,12 +42,13 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
-    data_loader = make_data_loader(dataset, 'teacher')
+    data_loader = make_data_loader(dataset, 'student')
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    compression = Compression(model)
-    sparsity_index = SparsityIndex(cfg['q'])
-    optimizer = make_optimizer(model, 'teacher')
-    scheduler = make_scheduler(optimizer, 'teacher')
+    result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
+    model.load_state_dict(result['model_state_dict'])
+    compression = Compression(model, cfg['prune_ratio'], cfg['prune_mode'])
+    optimizer = make_optimizer(model, 'student')
+    scheduler = make_scheduler(optimizer, 'student')
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'), resume_mode=cfg['resume_mode'])
     if result is None:
@@ -59,30 +62,31 @@ def runExperiment():
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
         compression = result['compression']
-        sparsity_index = result['sparsity_index']
         logger = result['logger']
     for iter in range(last_iter, cfg['num_iters'] + 1):
-        if iter != last_iter and last_epoch == 1:
-            result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter - 1, 'best'))
-            model.load_state_dict(result['model_state_dict'])
+        if last_epoch == 1:
+            if iter > 1:
+                result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter - 1, 'best'))
+                model.load_state_dict(result['model_state_dict'])
             compression.prune(model)
             compression.init(model)
-            optimizer = make_optimizer(model, 'teacher')
-            scheduler = make_scheduler(optimizer, 'teacher')
+            optimizer = make_optimizer(model, 'student')
+            scheduler = make_scheduler(optimizer, 'student')
             metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-        for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
+        for epoch in range(last_epoch, cfg['student']['num_epochs'] + 1):
             train(data_loader['train'], model, compression, optimizer, metric, logger, iter, epoch)
-            test(data_loader['test'], model, compression, sparsity_index, metric, logger, iter, epoch)
+            test(data_loader['test'], model, metric, logger, iter, epoch)
             scheduler.step()
             result = {'cfg': cfg, 'epoch': epoch + 1, 'iter': iter, 'model_state_dict': model.state_dict(),
                       'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
-                      'compression': compression, 'sparsity_index': sparsity_index, 'logger': logger}
+                      'compression': compression, 'logger': logger}
             save(result, './output/model/{}_checkpoint.pt'.format(cfg['model_tag']))
             if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
                 metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
                 shutil.copy('./output/model/{}_checkpoint.pt'.format(cfg['model_tag']),
                             './output/model/{}_{}_best.pt'.format(cfg['model_tag'], iter))
             logger.reset()
+        last_epoch = 1
     return
 
 
@@ -96,7 +100,6 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
         input = to_device(input, cfg['device'])
         optimizer.zero_grad()
         output = model(input)
-        output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
         output['loss'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         compression.freeze_grad(model)
@@ -108,7 +111,7 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
             lr = optimizer.param_groups[0]['lr']
             epoch_finished_time = datetime.timedelta(seconds=round(batch_time * (len(data_loader) - i - 1)))
             exp_finished_time = (epoch_finished_time + datetime.timedelta(
-                seconds=round((cfg['teacher']['num_epochs'] - epoch) * batch_time * len(data_loader)))) * \
+                seconds=round((cfg['student']['num_epochs'] - epoch) * batch_time * len(data_loader)))) * \
                                 cfg['num_iters']
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
@@ -121,7 +124,7 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
     return
 
 
-def test(data_loader, model, compression, sparsity_index, metric, logger, iter, epoch):
+def test(data_loader, model, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -130,7 +133,6 @@ def test(data_loader, model, compression, sparsity_index, metric, logger, iter, 
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
-            output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']),
@@ -138,7 +140,6 @@ def test(data_loader, model, compression, sparsity_index, metric, logger, iter, 
                          'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model, compression.mask[-1])
     logger.safe(False)
     return
 
