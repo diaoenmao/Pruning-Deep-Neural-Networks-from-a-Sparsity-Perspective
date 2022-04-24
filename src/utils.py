@@ -107,35 +107,19 @@ def recur(fn, input, *args):
 
 
 def process_dataset(dataset):
-    cfg['data_size'] = {'train': len(dataset['train']), 'test': len(dataset['test'])}
+    cfg['data_size'] = {k: len(dataset[k]) for k in dataset}
     cfg['target_size'] = dataset['train'].target_size
     return
 
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
-    if 'num_iters' in cfg['control']:
-        cfg['num_iters'] = int(cfg['control']['num_iters'])
+    if 'prune_iters' in cfg['control']:
+        cfg['prune_iters'] = int(cfg['control']['prune_iters'])
+        cfg['prune_ratio'] = int(cfg['control']['prune_ratio'])
+        cfg['prune_mode'] = int(cfg['control']['prune_mode'])
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
-    if 'Blob' in cfg['data_name']:
-        data_control_list = cfg['data_name'].split('-')[1:]
-        cfg['Blob'] = {'num_samples': int(data_control_list[0]), 'num_features': int(data_control_list[1]),
-                       'num_centers': int(data_control_list[2]), 'noise': float(data_control_list[3])}
-        data_shape[cfg['data_name']] = [cfg['Blob']['num_features']]
-    elif 'Friedman' in cfg['data_name']:
-        data_control_list = cfg['data_name'].split('-')[1:]
-        cfg['Friedman'] = {'num_samples': int(data_control_list[0]), 'num_features': int(data_control_list[1]),
-                           'noise': float(data_control_list[2])}
-        data_shape[cfg['data_name']] = [cfg['Friedman']['num_features']]
-    elif 'MLP' in cfg['data_name']:
-        data_control_list = cfg['data_name'].split('-')[1:]
-        cfg['MLP'] = {'mode': data_control_list[0], 'data_size': int(data_control_list[1]),
-                      'input_size': int(data_control_list[2]), 'hidden_size': int(data_control_list[3]),
-                      'scale_factor': float(data_control_list[4]), 'num_layers': int(data_control_list[5]),
-                      'activation': data_control_list[6], 'target_size': int(data_control_list[7]),
-                      'noise': float(data_control_list[8]), 'sparsity': float(data_control_list[9])}
-        data_shape[cfg['data_name']] = [cfg['MLP']['input_size']]
     cfg['data_shape'] = data_shape[cfg['data_name']]
     if 'mlp' in cfg['control']['model_name']:
         mlp_control_list = cfg['control']['model_name'].split('-')
@@ -156,22 +140,12 @@ def process_control():
     cfg['teacher']['weight_decay'] = 5e-4
     cfg['teacher']['nesterov'] = True
     cfg['teacher']['scheduler_name'] = 'CosineAnnealingLR'
-    if 'Blob' in cfg['data_name']:
-        cfg['teacher']['num_epochs'] = 100
-        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
-    elif 'Friedman' in cfg['data_name']:
-        cfg['teacher']['num_epochs'] = 100
-        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
-    elif 'MLP' in cfg['data_name']:
-        cfg['teacher']['num_epochs'] = 100
-        cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
-    elif cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+    if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
         cfg['teacher']['num_epochs'] = 100
         cfg['teacher']['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
     cfg['q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    cfg['prune_percent'] = 0.1
     cfg['stats'] = make_stats()
     return
 

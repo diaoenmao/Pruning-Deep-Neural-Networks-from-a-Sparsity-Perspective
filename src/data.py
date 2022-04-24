@@ -3,6 +3,7 @@ import os
 import torch
 import numpy as np
 import models
+import datasets
 from config import cfg
 from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
@@ -15,42 +16,11 @@ data_stats = {'MNIST': ((0.1307,), (0.3081,)), 'FashionMNIST': ((0.2860,), (0.35
 
 
 def fetch_dataset(data_name, verbose=True):
-    import datasets
     dataset = {}
     if verbose:
         print('fetching data {}...'.format(data_name))
     root = os.path.join('.', 'data', data_name)
-    if 'Blob' in data_name:
-        root = os.path.join('.', 'data', 'Blob')
-        dataset['train'] = datasets.Blob(root=root, split='train', num_samples=cfg['Blob']['num_samples'],
-                                         num_features=cfg['Blob']['num_features'],
-                                         num_centers=cfg['Blob']['num_centers'], noise=cfg['Blob']['noise'])
-        dataset['test'] = datasets.Blob(root=root, split='test', num_samples=cfg['Blob']['num_samples'],
-                                        num_features=cfg['Blob']['num_features'],
-                                        num_centers=cfg['Blob']['num_centers'], noise=cfg['Blob']['noise'])
-    elif 'Friedman' in data_name:
-        root = os.path.join('.', 'data', 'Friedman')
-        dataset['train'] = datasets.Friedman(root=root, split='train', num_samples=cfg['Friedman']['num_samples'],
-                                             num_features=cfg['Friedman']['num_features'],
-                                             noise=cfg['Friedman']['noise'])
-        dataset['test'] = datasets.Friedman(root=root, split='test', num_samples=cfg['Friedman']['num_samples'],
-                                            num_features=cfg['Friedman']['num_features'],
-                                            noise=cfg['Friedman']['noise'])
-    elif 'MLP' in data_name:
-        root = os.path.join('.', 'data', 'MLP')
-        dataset['train'] = datasets.MLP(root=root, split='train', mode=cfg['MLP']['mode'],
-                                        data_size=cfg['MLP']['data_size'], input_size=cfg['MLP']['input_size'],
-                                        hidden_size=cfg['MLP']['hidden_size'], scale_factor=cfg['MLP']['scale_factor'],
-                                        num_layers=cfg['MLP']['num_layers'], activation=cfg['MLP']['activation'],
-                                        target_size=cfg['MLP']['target_size'], noise=cfg['MLP']['noise'],
-                                        sparsity=cfg['MLP']['sparsity'])
-        dataset['test'] = datasets.MLP(root=root, split='test', mode=cfg['MLP']['mode'],
-                                       data_size=cfg['MLP']['data_size'], input_size=cfg['MLP']['input_size'],
-                                       hidden_size=cfg['MLP']['hidden_size'], scale_factor=cfg['MLP']['scale_factor'],
-                                       num_layers=cfg['MLP']['num_layers'], activation=cfg['MLP']['activation'],
-                                       target_size=cfg['MLP']['target_size'], noise=cfg['MLP']['noise'],
-                                       sparsity=cfg['MLP']['sparsity'])
-    elif data_name in ['MNIST', 'FashionMNIST']:
+    if data_name in ['MNIST', 'FashionMNIST']:
         dataset['train'] = eval('datasets.{}(root=root, split="train", '
                                 'transform=datasets.Compose([transforms.ToTensor()]))'.format(data_name))
         dataset['test'] = eval('datasets.{}(root=root, split="test", '

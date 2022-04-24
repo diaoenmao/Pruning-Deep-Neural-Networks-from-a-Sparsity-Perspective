@@ -31,25 +31,17 @@ class Metric(object):
 
     def make_metric_name(self, metric_name):
         for split in metric_name:
-            if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100'] or \
-                    'MLP-c' in cfg['data_name'] or 'Blob' in cfg['data_name']:
+            if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10']:
                 metric_name[split] += ['Accuracy']
-            elif 'Friedman' in cfg['data_name'] or 'MLP-r' in cfg['data_name']:
-                metric_name[split] += ['RMSE']
             else:
                 raise ValueError('Not valid data name')
         return metric_name
 
     def make_pivot(self):
-        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100'] or \
-                'MLP-c' in cfg['data_name'] or 'Blob' in cfg['data_name']:
+        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10']:
             pivot = -float('inf')
             pivot_direction = 'up'
             pivot_name = 'Accuracy'
-        elif 'Friedman' in cfg['data_name'] or 'MLP-r' in cfg['data_name']:
-            pivot = float('inf')
-            pivot_direction = 'down'
-            pivot_name = 'RMSE'
         else:
             raise ValueError('Not valid data name')
         return pivot, pivot_name, pivot_direction

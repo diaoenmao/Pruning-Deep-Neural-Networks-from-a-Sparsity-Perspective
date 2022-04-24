@@ -1,7 +1,9 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import cfg
+from utils import load
 
 
 def init_param(m):
@@ -61,3 +63,14 @@ def loss_fn(output, target):
     else:
         loss = F.mse_loss(output, target)
     return loss
+
+
+def load_init(seed, model):
+    pivot_data_name_dict = {'MNIST': 'MNIST', 'FashionMNIST': 'MNIST', 'CIFAR10': 'CIFAR10', 'SVHN': 'CIFAR10'}
+    pivot_data_name = pivot_data_name_dict[cfg['data_name']]
+    control_name = [pivot_data_name, cfg['control']['model_name']]
+    model_tag_list = [str(seed), *control_name]
+    model_tag = '_'.join([x for x in model_tag_list if x])
+    init = load(os.path.join('output', 'init', '{}.pt'.format(model_tag)))
+    model.load_state_dict(init['model_state_dict'])
+    return model

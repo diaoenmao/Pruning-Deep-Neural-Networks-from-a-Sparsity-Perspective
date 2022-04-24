@@ -46,47 +46,35 @@ def main():
     num_experiments = [[experiment_step]]
     resume_mode = [[resume_mode]]
     filename = '{}_{}_{}_{}'.format(run, mode, data, model)
-    if mode == 'teacher':
-        script_name = [['{}_teacher.py'.format(run)]]
-        if data == 'MLP':
-            data_name_r = [['MLP'], ['r'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
-                           ['sigmoid', 'relu'], ['1'], ['1.0'], ['0', '0.5']]
-            data_name_r = list(itertools.product(*data_name_r))
-            control_name_r = []
-            for i in range(len(data_name_r)):
-                model_name = ['mlp'] + list(data_name_r[i])[4:8]
-                control_name_r_r_i = '-'.join(list(data_name_r[i])) + '_' + '-'.join(model_name)
-                control_name_r.append(control_name_r_r_i)
-            data_name_c = [['MLP'], ['c'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
-                           ['sigmoid', 'relu'], ['10'], ['0.0'], ['0', '0.5']]
-            data_name_c = list(itertools.product(*data_name_c))
-            control_name_c = []
-            for i in range(len(data_name_c)):
-                model_name = ['mlp'] + list(data_name_c[i])[4:8]
-                control_name_c_i = '-'.join(list(data_name_c[i])) + '_' + '-'.join(model_name)
-                control_name_c.append(control_name_c_i)
-            control_name = [[control_name_r + control_name_c]]
+    if mode == 'init':
+        script_name = [['make_init_model.py'.format(run)]]
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
         else:
-            if data == 'Blob':
-                data_name = ['Blob-500-64-10-1.0']
-            elif data == 'Friedman':
-                data_name = ['Friedman-500-64-1.0']
-            else:
-                data_name = [data]
-            if model == 'mlp':
-                model_name = [['mlp'], ['128', '256'], ['1'], ['1', '2', '3', '4'], ['sigmoid', 'relu']]
-                model_name = list(itertools.product(*model_name))
-                for i in range(len(model_name)):
-                    model_name[i] = '-'.join(model_name[i])
-            else:
-                raise ValueError('Not valid model')
-            control_name = [[data_name, model_name]]
+            model_name = [model]
+        control_name = [[data_name, model_name]]
+        controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
+    elif mode == 'teacher':
+        script_name = [['{}_teacher.py'.format(run)]]
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            model_name = [model]
+        control_name = [[data_name, model_name]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_teacher_lt.py'.format(run)]]
         data_name = [data]
         if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['1', '2', '3', '4'], ['sigmoid', 'relu']]
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
             model_name = list(itertools.product(*model_name))
             for i in range(len(model_name)):
                 model_name[i] = '-'.join(model_name[i])
