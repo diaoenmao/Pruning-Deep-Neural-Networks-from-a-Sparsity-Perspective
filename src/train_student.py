@@ -42,13 +42,13 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
-    data_loader = make_data_loader(dataset, 'student')
+    data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
     model.load_state_dict(result['model_state_dict'])
-    compression = Compression(model, cfg['prune_ratio'], cfg['prune_mode'])
-    optimizer = make_optimizer(model, 'student')
-    scheduler = make_scheduler(optimizer, 'student')
+    compression = Compression(cfg['prune_ratio'], cfg['prune_mode'])
+    optimizer = make_optimizer(model, cfg['model_name'])
+    scheduler = make_scheduler(optimizer, cfg['model_name'])
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'), resume_mode=cfg['resume_mode'])
     if result is None:
@@ -65,14 +65,20 @@ def runExperiment():
         logger = result['logger']
     for iter in range(last_iter, cfg['prune_iters'] + 1):
         if last_epoch == 1:
-            result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
+            if cfg['prune_mode'][0] == 'once':
+                result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
+            elif cfg['prune_mode'][0] == 'lt':
+                if iter > 1:
+                    result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter - 1, 'best'))
+            else:
+                raise ValueError('Not valid prune mode')
             model.load_state_dict(result['model_state_dict'])
             compression.prune(model)
             compression.init(model)
-            optimizer = make_optimizer(model, 'student')
-            scheduler = make_scheduler(optimizer, 'student')
+            optimizer = make_optimizer(model, cfg['model_name'])
+            scheduler = make_scheduler(optimizer, cfg['model_name'])
             metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-        for epoch in range(last_epoch, cfg['student']['num_epochs'] + 1):
+        for epoch in range(last_epoch, cfg[cfg['model_name']]['num_epochs'] + 1):
             train(data_loader['train'], model, compression, optimizer, metric, logger, iter, epoch)
             test(data_loader['test'], model, metric, logger, iter, epoch)
             scheduler.step()
@@ -111,11 +117,11 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
             lr = optimizer.param_groups[0]['lr']
             epoch_finished_time = datetime.timedelta(seconds=round(batch_time * (len(data_loader) - i - 1)))
             exp_finished_time = (epoch_finished_time + datetime.timedelta(
-                seconds=round((cfg['student']['num_epochs'] - epoch) * batch_time * len(data_loader)))) * \
-                                cfg['num_iters']
+                seconds=round((cfg[cfg['model_name']]['num_epochs'] - epoch) * batch_time * len(data_loader)))) * \
+                                cfg['prune_iters']
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
-                             'Train Iter: {}/{}'.format(iter, cfg['num_iters']),
+                             'Train Iter: {}/{}'.format(iter, cfg['prune_iters']),
                              'Learning rate: {:.6f}'.format(lr), 'Epoch Finished Time: {}'.format(epoch_finished_time),
                              'Experiment Finished Time: {}'.format(exp_finished_time)]}
             logger.append(info, 'train', mean=False)
@@ -138,7 +144,7 @@ def test(data_loader, model, metric, logger, iter, epoch):
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']),
                          'Test Epoch: {}({:.0f}%)'.format(epoch, 100.),
-                         'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
+                         'Test Iter: {}/{}'.format(iter, cfg['prune_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     logger.safe(False)

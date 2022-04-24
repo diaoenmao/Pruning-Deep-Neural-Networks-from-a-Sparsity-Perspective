@@ -36,20 +36,18 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
-    data_loader = make_data_loader(dataset, 'teacher')
+    data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    test_sparsity_index = SparsityIndex(cfg['q'])
+    sparsity_index = SparsityIndex(cfg['q'])
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'best'))
     last_epoch = result['epoch']
     model.load_state_dict(result['model_state_dict'])
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
-    test(data_loader['test'], model, test_sparsity_index, metric, test_logger, last_epoch)
+    test(data_loader['test'], model, sparsity_index, metric, test_logger, last_epoch)
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
-    train_sparsity_index = result['sparsity_index']
     train_logger = result['logger']
-    result = {'cfg': cfg, 'epoch': last_epoch,
-              'sparsity_index': {'train': train_sparsity_index, 'test': test_sparsity_index},
+    result = {'cfg': cfg, 'epoch': last_epoch, 'sparsity_index': sparsity_index,
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return

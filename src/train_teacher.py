@@ -39,12 +39,11 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
-    data_loader = make_data_loader(dataset, 'teacher')
+    data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    models.load_init(cfg['seed'], model)
-    sparsity_index = SparsityIndex(cfg['q'])
-    optimizer = make_optimizer(model, 'teacher')
-    scheduler = make_scheduler(optimizer, 'teacher')
+    model.load_state_dict(models.load_init_state_dict(cfg['seed']))
+    optimizer = make_optimizer(model, cfg['model_name'])
+    scheduler = make_scheduler(optimizer, cfg['model_name'])
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'), resume_mode=cfg['resume_mode'])
     if result is None:
@@ -55,15 +54,14 @@ def runExperiment():
         model.load_state_dict(result['model_state_dict'])
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
-        sparsity_index = result['sparsity_index']
         logger = result['logger']
-    for epoch in range(last_epoch, cfg['teacher']['num_epochs'] + 1):
+    for epoch in range(last_epoch, cfg[cfg['model_name']]['num_epochs'] + 1):
         train(data_loader['train'], model, optimizer, metric, logger, epoch)
-        test(data_loader['test'], model, sparsity_index, metric, logger, epoch)
+        test(data_loader['test'], model, metric, logger, epoch)
         scheduler.step()
         result = {'cfg': cfg, 'epoch': epoch + 1, 'model_state_dict': model.state_dict(),
                   'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
-                  'sparsity_index': sparsity_index, 'logger': logger}
+                  'logger': logger}
         save(result, './output/model/{}_checkpoint.pt'.format(cfg['model_tag']))
         if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
             metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
@@ -93,7 +91,7 @@ def train(data_loader, model, optimizer, metric, logger, epoch):
             lr = optimizer.param_groups[0]['lr']
             epoch_finished_time = datetime.timedelta(seconds=round(batch_time * (len(data_loader) - i - 1)))
             exp_finished_time = epoch_finished_time + datetime.timedelta(
-                seconds=round((cfg['teacher']['num_epochs'] - epoch) * batch_time * len(data_loader)))
+                seconds=round((cfg[cfg['model_name']]['num_epochs'] - epoch) * batch_time * len(data_loader)))
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
                              'Learning rate: {:.6f}'.format(lr), 'Epoch Finished Time: {}'.format(epoch_finished_time),
@@ -104,7 +102,7 @@ def train(data_loader, model, optimizer, metric, logger, epoch):
     return
 
 
-def test(data_loader, model, sparsity_index, metric, logger, epoch):
+def test(data_loader, model, metric, logger, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -118,7 +116,6 @@ def test(data_loader, model, sparsity_index, metric, logger, epoch):
         info = {'info': ['Model: {}'.format(cfg['model_tag']), 'Test Epoch: {}({:.0f}%)'.format(epoch, 100.)]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model)
     logger.safe(False)
     return
 

@@ -30,8 +30,8 @@ class SparsityIndex:
 
 
 class Compression:
-    def __init__(self, model, prune_ratio, prume_mode):
-        self.init_model_state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
+    def __init__(self, prune_ratio, prume_mode):
+        self.init_model_state_dict = models.load_init_state_dict(cfg['seed'])
         self.mask = [self.make_mask(self.init_model_state_dict)]
         self.prune_ratio = prune_ratio
         self.prume_mode = prume_mode

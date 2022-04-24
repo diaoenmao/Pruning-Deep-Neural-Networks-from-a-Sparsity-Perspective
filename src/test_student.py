@@ -36,13 +36,13 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
-    data_loader = make_data_loader(dataset, 'teacher')
+    data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     sparsity_index = SparsityIndex(cfg['q'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     last_iter = 1
-    for iter in range(last_iter, cfg['num_iters'] + 1):
+    for iter in range(last_iter, cfg['prune_iters'] + 1):
         result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter, 'best'))
         if result is not None:
             last_epoch = result['epoch']
@@ -54,8 +54,7 @@ def runExperiment():
     train_logger = result['logger']
     compression = result['compression']
     compression.init_model_state_dict = None
-    result = {'cfg': cfg, 'compression': compression,
-              'sparsity_index': sparsity_index,
+    result = {'cfg': cfg, 'compression': compression, 'sparsity_index': sparsity_index,
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
@@ -74,7 +73,7 @@ def test(data_loader, model, compression, sparsity_index, metric, logger, iter, 
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']),
                          'Test Epoch: {}({:.0f}%)'.format(epoch, 100.),
-                         'Test Iter: {}/{}'.format(iter, cfg['num_iters'])]}
+                         'Test Iter: {}/{}'.format(iter, cfg['prune_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model, compression.mask[iter - 1])
