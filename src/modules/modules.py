@@ -30,11 +30,11 @@ class SparsityIndex:
 
 
 class Compression:
-    def __init__(self, prune_ratio, prume_mode):
+    def __init__(self, prune_ratio, prune_mode):
         self.init_model_state_dict = models.load_init_state_dict(cfg['seed'])
         self.mask = [self.make_mask(self.init_model_state_dict)]
         self.prune_ratio = prune_ratio
-        self.prume_mode = prume_mode
+        self.prune_mode = prune_mode
 
     def make_mask(self, model_state_dict):
         mask = OrderedDict()
@@ -45,28 +45,35 @@ class Compression:
         return mask
 
     def prune(self, model):
-        if self.prune_mode[-1] == 'global':
-            new_mask = OrderedDict()
+        if self.prune_mode[1] == 'global':
+            pivot_param = []
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
                     mask = self.mask[-1][name]
                     masked_param = param[mask]
-                    pivot_param = masked_param.abs()
-                    percentile_value = torch.quantile(pivot_param, self.prune_ratio)
+                    pivot_param_i = masked_param.abs()
+                    pivot_param.append(pivot_param_i.view(-1))
+            pivot_param = torch.cat(pivot_param, dim=0)
+            percentile_value = torch.quantile(pivot_param, self.prune_ratio)
+            new_mask = OrderedDict()
+            for name, param in model.named_parameters():
+                parameter_type = name.split('.')[-1]
+                if 'weight' in parameter_type:
+                    mask = self.mask[-1][name]
                     percentile_mask = (param.data.abs() < percentile_value).to('cpu')
                     new_mask[name] = torch.where(percentile_mask, False, mask)
                     param.data = torch.where(new_mask[name].to(param.device), param.data,
                                              torch.tensor(0, dtype=torch.float, device=param.device))
-        elif self.prune_mode[-1] == 'layer':
+        elif self.prune_mode[1] == 'layer':
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
                     mask = self.mask[-1][name]
                     masked_param = param[mask]
-                    pivot_param = masked_param.abs()
-                    percentile_value = torch.quantile(pivot_param, self.prune_ratio)
+                    pivot_param_i = masked_param.abs()
+                    percentile_value = torch.quantile(pivot_param_i, self.prune_ratio)
                     percentile_mask = (param.data.abs() < percentile_value).to('cpu')
                     new_mask[name] = torch.where(percentile_mask, False, mask)
                     param.data = torch.where(new_mask[name].to(param.device), param.data,

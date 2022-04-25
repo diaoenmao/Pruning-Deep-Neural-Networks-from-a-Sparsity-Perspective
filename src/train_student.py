@@ -68,7 +68,9 @@ def runExperiment():
             if cfg['prune_mode'][0] == 'once':
                 result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
             elif cfg['prune_mode'][0] == 'lt':
-                if iter > 1:
+                if iter == 1:
+                    result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
+                else:
                     result = resume('./output/model/{}_{}_{}.pt'.format(cfg['model_tag'], iter - 1, 'best'))
             else:
                 raise ValueError('Not valid prune mode')
@@ -105,7 +107,6 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
         input = to_device(input, cfg['device'])
         optimizer.zero_grad()
         output = model(input)
-        output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
         output['loss'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         compression.freeze_grad(model)
@@ -139,7 +140,6 @@ def test(data_loader, model, metric, logger, iter, epoch):
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
-            output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']),
