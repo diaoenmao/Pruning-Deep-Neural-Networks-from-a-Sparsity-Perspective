@@ -26,51 +26,37 @@ def make_controls(control_name):
 
 def make_control_list(mode, data, model):
     if mode == 'teacher':
-        if data == 'MLP':
-            data_name_r = [['MLP'], ['r'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
-                           ['sigmoid', 'relu'], ['1'], ['1.0'], ['0', '0.5']]
-            data_name_r = list(itertools.product(*data_name_r))
-            control_name_r = []
-            for i in range(len(data_name_r)):
-                model_name = ['mlp'] + list(data_name_r[i])[4:8]
-                control_name_r_r_i = '-'.join(list(data_name_r[i])) + '_' + '-'.join(model_name)
-                control_name_r.append(control_name_r_r_i)
-            data_name_c = [['MLP'], ['c'], ['500'], ['64'], ['128', '256'], ['1'], ['1', '2', '3', '4'],
-                           ['sigmoid', 'relu'], ['10'], ['0.0'], ['0', '0.5']]
-            data_name_c = list(itertools.product(*data_name_c))
-            control_name_c = []
-            for i in range(len(data_name_c)):
-                model_name = ['mlp'] + list(data_name_c[i])[4:8]
-                control_name_c_i = '-'.join(list(data_name_c[i])) + '_' + '-'.join(model_name)
-                control_name_c.append(control_name_c_i)
-            control_name = [[control_name_r + control_name_c]]
-        else:
-            if data == 'Blob':
-                data_name = ['Blob-500-64-10-1.0']
-            elif data == 'Friedman':
-                data_name = ['Friedman-500-64-1.0']
-            else:
-                data_name = [data]
-            if model == 'mlp':
-                model_name = [['mlp'], ['128', '256'], ['1'], ['1', '2', '3', '4'], ['sigmoid', 'relu']]
-                model_name = list(itertools.product(*model_name))
-                for i in range(len(model_name)):
-                    model_name[i] = '-'.join(model_name[i])
-            else:
-                raise ValueError('Not valid model')
-            control_name = [[data_name, model_name]]
-        controls = make_controls(control_name)
-    elif mode == 'lt':
         data_name = [data]
         if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['1', '2', '3', '4'], ['sigmoid', 'relu']]
-            # model_name = [['mlp'], ['128'], ['1'], ['1'], ['relu']]
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            model_name = [model]
+        control_name = [[data_name, model_name]]
+        controls = make_controls(control_name)
+    elif mode == 'once':
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
             model_name = list(itertools.product(*model_name))
             for i in range(len(model_name)):
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['50']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global', 'once-layer']]]
+        controls = make_controls(control_name)
+    elif mode == 'lt':
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            raise ValueError('Not valid model')
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global', 'lt-layer']]]
         controls = make_controls(control_name)
     else:
         raise ValueError('Not valid mode')
@@ -78,11 +64,13 @@ def make_control_list(mode, data, model):
 
 
 def main():
-    data = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']
-    # data = ['MNIST']
+    mode = ['teacher', 'once', 'lt']
+    # data = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10']
+    data = ['MNIST', 'FashionMNIST']
     controls = []
-    for data_i in data:
-        controls += make_control_list('lt', data_i, 'mlp')
+    for mode_i in mode:
+        for data_i in data:
+            controls += make_control_list(mode_i, data_i, 'mlp')
     processed_result_exp, processed_result_history = process_result(controls)
     save(processed_result_exp, os.path.join(result_path, 'processed_result_exp.pt'))
     save(processed_result_history, os.path.join(result_path, 'processed_result_history.pt'))
@@ -92,6 +80,7 @@ def main():
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
     df_history = make_df_result(extracted_processed_result_history, 'history')
+    exit()
     make_vis(df_exp, 'exp')
     make_vis(df_history, 'history')
     return
@@ -118,39 +107,30 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                 if metric_name not in processed_result_exp:
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
-            q = base_result['sparsity_index']['test'].q
+            q = base_result['sparsity_index'].q
             for i in range(len(q)):
                 metric_name = 'SI-{}'.format(q[i])
                 if metric_name not in processed_result_exp:
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 si_i = []
-                for m in range(len(base_result['sparsity_index']['test'].si)):
-                    si_i_m = make_si(base_result['sparsity_index']['test'].si[m][i])
+                for m in range(len(base_result['sparsity_index'].si)):
+                    si_i_m = make_si(base_result['sparsity_index'].si[m][i])
                     si_i.extend(si_i_m)
                 processed_result_exp[metric_name]['exp'][exp_idx] = si_i
-            metric_name = 'CR'
-            if metric_name not in processed_result_exp:
-                processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-            cr = []
-            for m in range(len(base_result['compression'].mask)):
-                cr_m = make_cr(base_result['compression'].mask[m])
-                cr.extend(cr_m)
-            processed_result_exp[metric_name]['exp'][exp_idx] = cr
+            if 'compression' in base_result:
+                metric_name = 'CR'
+                if metric_name not in processed_result_exp:
+                    processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                cr = []
+                for m in range(len(base_result['compression'].mask)):
+                    cr_m = make_cr(base_result['compression'].mask[m])
+                    cr.extend(cr_m)
+                processed_result_exp[metric_name]['exp'][exp_idx] = cr
             for k in base_result['logger']['train'].history:
                 metric_name = k.split('/')[1]
                 if metric_name not in processed_result_history:
                     processed_result_history[metric_name] = {'history': [None for _ in range(num_experiments)]}
                 processed_result_history[metric_name]['history'][exp_idx] = base_result['logger']['train'].history[k]
-            q = base_result['sparsity_index']['train'].q
-            for i in range(len(q)):
-                metric_name = 'SI-{}'.format(q[i])
-                if metric_name not in processed_result_history:
-                    processed_result_history[metric_name] = {'history': [None for _ in range(num_experiments)]}
-                si_i = []
-                for m in range(len(base_result['sparsity_index']['train'].si)):
-                    si_i_m = make_si(base_result['sparsity_index']['train'].si[m][i])
-                    si_i.extend(si_i_m)
-                processed_result_history[metric_name]['history'][exp_idx] = si_i
         else:
             print('Missing {}'.format(base_result_path_i))
     else:
@@ -212,14 +192,14 @@ def make_df_result(extracted_processed_result, mode_name):
             index_name = [0]
             df[df_name].append(
                 pd.DataFrame(data=extracted_processed_result[exp_name][k].reshape(1, -1), index=index_name))
-    # startrow = 0
-    # writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode_name), engine='xlsxwriter')
+    startrow = 0
+    writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode_name), engine='xlsxwriter')
     for df_name in df:
         df[df_name] = pd.concat(df[df_name])
-    #     df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
-    #     writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
-    #     startrow = startrow + len(df[df_name].index) + 3
-    # writer.save()
+        df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
+        writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
+        startrow = startrow + len(df[df_name].index) + 3
+    writer.save()
     return df
 
 
@@ -227,7 +207,7 @@ def make_vis(df, mode_name):
     xlabel_dict = {'exp': 'Iteration', 'history': 'Epoch'}
     ylabel_dict = {'Loss': 'Loss', 'Accuracy': 'Accuracy', 'SI': 'Sparsity Index', 'CR': 'Compression Ratio'}
     color_dict = {'MNIST': 'red', 'FashionMNIST': 'orange', 'CIFAR10': 'blue', 'CIFAR100': 'green', 'SVHN': 'cyan'}
-    linestyle_dict = {'MNIST': '-', 'FashionMNIST': '--', 'CIFAR10': '-.', 'CIFAR100': ':','SVHN': (0, (1, 5))}
+    linestyle_dict = {'MNIST': '-', 'FashionMNIST': '--', 'CIFAR10': '-.', 'CIFAR100': ':', 'SVHN': (0, (1, 5))}
     fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
     loc_dict = {'Loss': 'lower right', 'Accuracy': 'lower right', 'SI': 'lower right', 'CR': 'upper right'}
     fig = {}
@@ -317,7 +297,12 @@ def make_cr(input):
     cr = []
     for name, param in input.items():
         mask = param.view(-1)
-        cr.append(mask.float().mean().item())
+        cr_i = mask.float().mean().item()
+        if cr_i == 0:
+            cr_i = float('nan')
+        else:
+            cr_i = 1 / cr_i
+        cr.append(cr_i)
     return cr
 
 
