@@ -79,8 +79,8 @@ def main():
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
     df_history = make_df_result(extracted_processed_result_history, 'history')
-    make_vis_by_dataset(df_exp, 'SI')
-    make_vis_by_model(df_exp, 'SI')
+    # make_vis_by_dataset(df_exp, 'SI')
+    # make_vis_by_model(df_exp, 'SI')
     make_vis_by_layer(df_exp, 'SI')
     # make_vis_by_dataset(df_exp, 'Norm')
     # make_vis_by_model(df_exp, 'Norm')
@@ -431,11 +431,11 @@ def make_vis_by_layer(df, y_name):
                         AX2[fig_name] = fig[fig_name].add_subplot(122)
                     ax1 = AX1[fig_name]
                     ax2 = AX2[fig_name]
-                    label = str(j) if j < y.shape[-1] else 'all'
+                    label = str(j) if j < (y.shape[-1] - 1) else 'all'
                     x = np.arange(int(prune_iters))
                     y_j = y[:-1, j]
                     ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label='$\ell={}$'.format(j + 1))
+                             label='$\ell={}$'.format(label))
                     ax1.legend(loc='upper left', fontsize=fontsize['legend'])
                     ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
                     ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
@@ -443,7 +443,7 @@ def make_vis_by_layer(df, y_name):
                     ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
                     z = cr[1:, j]
                     ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
-                             label='$\ell={}$'.format(j + 1))
+                             label='$\ell={}$'.format(label))
                     ax2.legend(loc='upper left', fontsize=fontsize['legend'])
                     ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
                     ax2.set_ylabel('Compression Ratio (CR)', fontsize=fontsize['label'])
@@ -478,18 +478,24 @@ def make_y(input):
 
 def make_cr(input):
     cr = []
+    mask = []
     for name, param in input.items():
-        mask = param.view(-1)
-        cr_i = mask.float().mean().item()
+        mask_i = param.view(-1).float()
+        cr_i = mask_i.mean().item()
+        mask.append(mask_i)
         cr.append(cr_i)
+    mask = torch.cat(mask)
+    cr.append(mask.mean())
     return cr
 
 
 def make_z(pivot_metric, pivot_metric_name):
     if pivot_metric_name in ['Accuracy']:
-        z = np.abs(np.minimum(pivot_metric[1:] - pivot_metric[0], 0)) / pivot_metric[0]
+        z = (pivot_metric[0] - pivot_metric[1:]) / pivot_metric[0]
     elif pivot_metric_name in ['Loss']:
-        z = np.abs(np.maximum(pivot_metric[1:] - pivot_metric[0], 0)) / pivot_metric[0]
+        z = (pivot_metric[1:] - pivot_metric[0]) / pivot_metric[0]
+    elif pivot_metric_name in ['Loss-Teacher']:
+        z = (pivot_metric[1:] - pivot_metric[0])
     else:
         raise ValueError('Not valid pivot metric name')
     return z

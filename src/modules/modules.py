@@ -16,7 +16,7 @@ class SparsityIndex:
 
     def sparsity_index(self, x, q, mask=None):
         if mask is not None:
-            mask_float = mask[name].to(x.device).float()
+            mask_float = mask.to(x.device).float()
             x = x * mask_float
             d = mask_float.sum(dim=-1)
         else:
@@ -32,7 +32,10 @@ class SparsityIndex:
             for name, param in model.state_dict().items():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
-                    si_i[name] = self.sparsity_index(param, self.q[i], mask)
+                    if mask is not None:
+                        si_i[name] = self.sparsity_index(param, self.q[i], mask[name])
+                    else:
+                        si_i[name] = self.sparsity_index(param, self.q[i], mask)
             si.append(si_i)
         self.si.append(si)
         return
