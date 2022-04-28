@@ -64,8 +64,8 @@ def make_control_list(mode, data, model):
 
 
 def main():
-    mode = ['teacher', 'once', 'lt']
-    data = ['MNIST', 'FashionMNIST', 'CIFAR10', 'SVHN']
+    mode = ['teacher', 'once']
+    data = ['MNIST', 'FashionMNIST']
     controls = []
     for mode_i in mode:
         for data_i in data:
@@ -78,11 +78,11 @@ def main():
     extract_processed_result(extracted_processed_result_exp, processed_result_exp, [])
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
-    # df_history = make_df_result(extracted_processed_result_history, 'history')
-    # make_vis_by_dataset(df_exp, 'SI')
-    # make_vis_by_model(df_exp, 'SI')
-    # make_vis_by_layer(df_exp, 'SI')
-    make_vis_by_dataset(df_exp, 'Norm')
+    df_history = make_df_result(extracted_processed_result_history, 'history')
+    make_vis_by_dataset(df_exp, 'SI')
+    make_vis_by_model(df_exp, 'SI')
+    make_vis_by_layer(df_exp, 'SI')
+    # make_vis_by_dataset(df_exp, 'Norm')
     # make_vis_by_model(df_exp, 'Norm')
     # make_vis_by_layer(df_exp, 'Norm')
     return
@@ -116,7 +116,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 si_i = []
                 for m in range(len(base_result['sparsity_index'].si)):
-                    si_i_m = make_si(base_result['sparsity_index'].si[m][i])
+                    si_i_m = make_y(base_result['sparsity_index'].si[m][i])
                     si_i.extend(si_i_m)
                 processed_result_exp[metric_name]['exp'][exp_idx] = si_i
             q = base_result['norm'].q
@@ -126,7 +126,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 norm_i = []
                 for m in range(len(base_result['norm'].norm)):
-                    norm_i_m = make_norm(base_result['norm'].norm[m][i])
+                    norm_i_m = make_y(base_result['norm'].norm[m][i])
                     norm_i.extend(norm_i_m)
                 processed_result_exp[metric_name]['exp'][exp_idx] = norm_i
             if 'compression' in base_result:
@@ -227,7 +227,7 @@ def make_vis_by_dataset(df, y_name):
         pivot_data_name_dict = {'MNIST': 'MNIST', 'FashionMNIST': 'MNIST', 'CIFAR10': 'CIFAR10', 'SVHN': 'CIFAR10'}
         y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        pivot_metric_names = ['Accuracy', 'Loss']
+        pivot_metric_names = ['Accuracy', 'Loss', 'Loss-Teacher']
         controls = []
         for mode_i in mode:
             for data_i in data:
@@ -260,7 +260,8 @@ def make_vis_by_dataset(df, y_name):
                     pivot_metric = np.concatenate([teacher_pivot_metric, pivot_metric], axis=0)
                     for j in range(y.shape[-1]):
                         pivot_data_name = pivot_data_name_dict[df_name_list[0]]
-                        fig_name = '_'.join([pivot_data_name, *df_name_list[1:5], q, pivot_metric_names_i, str(j)])
+                        layer_tag = str(j) if j < (y.shape[-1] - 1) else 'all'
+                        fig_name = '_'.join([pivot_data_name, *df_name_list[1:5], q, pivot_metric_names_i, layer_tag])
                         label = df_name_list[0]
                         fig[fig_name] = plt.figure(fig_name)
                         if fig_name not in AX1:
@@ -314,7 +315,7 @@ def make_vis_by_model(df, y_name):
                       'mlp-128-1-4-relu': '$N=128$, $L=4$', 'mlp-256-1-4-relu': '$N=256$, $L=4$'}
         y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        pivot_metric_names = ['Accuracy', 'Loss']
+        pivot_metric_names = ['Accuracy', 'Loss', 'Loss-Teacher']
         controls = []
         for mode_i in mode:
             for data_i in data:
@@ -347,8 +348,9 @@ def make_vis_by_model(df, y_name):
                     pivot_metric = np.concatenate([teacher_pivot_metric, pivot_metric], axis=0)
                     for j in range(y.shape[-1]):
                         L = df_name_list[1].split('-')[-2]
+                        layer_tag = str(j) if j < (y.shape[-1] - 1) else 'all'
                         fig_name = '_'.join([df_name_list[0], *df_name_list[2:5], q,
-                                             pivot_metric_names_i, str(L), str(j)])
+                                             pivot_metric_names_i, str(L), layer_tag])
                         label = df_name_list[1]
                         fig[fig_name] = plt.figure(fig_name)
                         if fig_name not in AX1:
@@ -390,10 +392,10 @@ def make_vis_by_layer(df, y_name):
     data_all = [['MNIST'], ['FashionMNIST'], ['CIFAR10'], ['SVHN']]
     for i in range(len(data_all)):
         data = data_all[i]
-        color_dict = {'0': 'red', '1': 'orange', '2': 'blue', '3': 'cyan', '4': 'green'}
-        linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (1, (5, 5))}
-        z_color_dict = {'0': 'red', '1': 'orange', '2': 'blue', '3': 'cyan', '4': 'green'}
-        z_linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (1, (5, 5))}
+        color_dict = {'0': 'red', '1': 'orange', '2': 'blue', '3': 'cyan', '4': 'green', 'all': 'black'}
+        linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (0, (1, 10)), 'all': (0, (5, 10))}
+        z_color_dict = {'0': 'red', '1': 'orange', '2': 'blue', '3': 'cyan', '4': 'green', 'all': 'black'}
+        z_linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (0, (1, 10)), 'all': (0, (5, 10))}
         y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
         controls = []
@@ -429,7 +431,7 @@ def make_vis_by_layer(df, y_name):
                         AX2[fig_name] = fig[fig_name].add_subplot(122)
                     ax1 = AX1[fig_name]
                     ax2 = AX2[fig_name]
-                    label = str(j)
+                    label = str(j) if j < y.shape[-1] else 'all'
                     x = np.arange(int(prune_iters))
                     y_j = y[:-1, j]
                     ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -462,20 +464,16 @@ def make_vis_by_layer(df, y_name):
     return
 
 
-def make_si(input):
-    si = []
+def make_y(input):
+    y = []
+    valid_param = []
     for name, param in input.items():
-        valid_param = param[~param.isnan()]
-        si.append(valid_param.mean())
-    return si
-
-
-def make_norm(input):
-    norm = []
-    for name, param in input.items():
-        valid_param = param[~param.isnan()]
-        norm.append(valid_param.mean())
-    return norm
+        valid_param_i = param[~param.isnan()]
+        valid_param.append(valid_param_i.view(-1))
+        y.append(valid_param_i.mean())
+    valid_param = torch.cat(valid_param)
+    y.append(valid_param.mean())
+    return y
 
 
 def make_cr(input):

@@ -43,7 +43,7 @@ def runExperiment():
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'best'))
     last_epoch = result['epoch']
     model.load_state_dict(result['model_state_dict'])
-    metric = Metric({'train': ['Loss'], 'test': ['Loss']})
+    metric = Metric({'train': ['Loss', 'Loss-Teacher'], 'test': ['Loss', 'Loss-Teacher']})
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     test(data_loader['test'], model, sparsity_index, norm, metric, test_logger, last_epoch)
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
@@ -63,6 +63,7 @@ def test(data_loader, model, sparsity_index, norm, metric, logger, epoch):
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
+            input['teacher_target'] = output['target']
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
         info = {'info': ['Model: {}'.format(cfg['model_tag']), 'Test Epoch: {}({:.0f}%)'.format(epoch, 100.)]}

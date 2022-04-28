@@ -26,6 +26,7 @@ class Metric(object):
         self.metric_name = self.make_metric_name(metric_name)
         self.pivot, self.pivot_name, self.pivot_direction = self.make_pivot()
         self.metric = {'Loss': (lambda input, output: output['loss'].item()),
+                       'Loss-Teacher': (lambda input, output: recur(RMSE, output['target'], input['teacher_target'])),
                        'Accuracy': (lambda input, output: recur(Accuracy, output['target'], input['target'])),
                        'RMSE': (lambda input, output: recur(RMSE, output['target'], input['target']))}
 

@@ -25,6 +25,8 @@ def main():
     for i in range(cfg['num_experiments']):
         model_tag_list = [str(seeds[i]), cfg['control_name']]
         cfg['model_tag'] = '_'.join([x for x in model_tag_list if x])
+        teacher_model_tag_list = [str(seeds[i]), '_'.join(cfg['control_name'].split('_')[:2])]
+        cfg['teacher_model_tag'] = '_'.join([x for x in teacher_model_tag_list if x])
         print('Experiment: {}'.format(cfg['model_tag']))
         runExperiment()
     return
@@ -37,8 +39,11 @@ def runExperiment():
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, cfg['model_name'])
+    teacher_model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
+    result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
+    teacher_model.load_state_dict(result['model_state_dict'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    metric = Metric({'train': ['Loss'], 'test': ['Loss']})
+    metric = Metric({'train': ['Loss', 'Loss-Teacher'], 'test': ['Loss', 'Loss-Teacher']})
     sparsity_index = SparsityIndex(cfg['si_q'])
     norm = Norm(cfg['norm_q'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
@@ -49,7 +54,8 @@ def runExperiment():
             last_epoch = result['epoch']
             model.load_state_dict(result['model_state_dict'])
             compression = result['compression']
-            test(data_loader['test'], model, compression, sparsity_index, norm, metric, test_logger, iter, last_epoch)
+            test(data_loader['test'], model, teacher_model, compression, sparsity_index, norm, metric, test_logger,
+                 iter, last_epoch)
         test_logger.reset()
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
     train_logger = result['logger']
@@ -61,7 +67,7 @@ def runExperiment():
     return
 
 
-def test(data_loader, model, compression, sparsity_index, norm, metric, logger, iter, epoch):
+def test(data_loader, model, teacher_model, compression, sparsity_index, norm, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -69,6 +75,8 @@ def test(data_loader, model, compression, sparsity_index, norm, metric, logger, 
             input = collate(input)
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
+            teacher_output = teacher_model(input)
+            input['teacher_target'] = teacher_output['target'].detach()
             output = model(input)
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
