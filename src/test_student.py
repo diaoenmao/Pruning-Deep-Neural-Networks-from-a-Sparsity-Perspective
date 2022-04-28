@@ -8,7 +8,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, resume, collate
 from logger import make_logger
-from modules import SparsityIndex
+from modules import SparsityIndex, Norm
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -39,7 +39,8 @@ def runExperiment():
     data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-    sparsity_index = SparsityIndex(cfg['q'])
+    sparsity_index = SparsityIndex(cfg['si_q'])
+    norm = Norm(cfg['norm_q'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     last_iter = 1
     for iter in range(last_iter, cfg['prune_iters'] + 1):
@@ -48,19 +49,19 @@ def runExperiment():
             last_epoch = result['epoch']
             model.load_state_dict(result['model_state_dict'])
             compression = result['compression']
-            test(data_loader['test'], model, compression, sparsity_index, metric, test_logger, iter, last_epoch)
+            test(data_loader['test'], model, compression, sparsity_index, norm, metric, test_logger, iter, last_epoch)
         test_logger.reset()
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
     train_logger = result['logger']
     compression = result['compression']
     compression.init_model_state_dict = None
-    result = {'cfg': cfg, 'compression': compression, 'sparsity_index': sparsity_index,
+    result = {'cfg': cfg, 'compression': compression, 'sparsity_index': sparsity_index, 'norm': norm,
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
 
 
-def test(data_loader, model, compression, sparsity_index, metric, logger, iter, epoch):
+def test(data_loader, model, compression, sparsity_index, norm, metric, logger, iter, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -77,6 +78,7 @@ def test(data_loader, model, compression, sparsity_index, metric, logger, iter, 
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model, compression.mask[iter - 1])
+    norm.make_norm(model, compression.mask[iter - 1])
     logger.safe(False)
     return
 

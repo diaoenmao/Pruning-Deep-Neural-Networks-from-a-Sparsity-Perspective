@@ -8,7 +8,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, resume, collate
 from logger import make_logger
-from modules import SparsityIndex
+from modules import SparsityIndex, Norm
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -38,22 +38,23 @@ def runExperiment():
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    sparsity_index = SparsityIndex(cfg['q'])
+    sparsity_index = SparsityIndex(cfg['si_q'])
+    norm = Norm(cfg['norm_q'])
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'best'))
     last_epoch = result['epoch']
     model.load_state_dict(result['model_state_dict'])
     metric = Metric({'train': ['Loss'], 'test': ['Loss']})
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
-    test(data_loader['test'], model, sparsity_index, metric, test_logger, last_epoch)
+    test(data_loader['test'], model, sparsity_index, norm, metric, test_logger, last_epoch)
     result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
     train_logger = result['logger']
-    result = {'cfg': cfg, 'epoch': last_epoch, 'sparsity_index': sparsity_index,
+    result = {'cfg': cfg, 'epoch': last_epoch, 'sparsity_index': sparsity_index, 'norm': norm,
               'logger': {'train': train_logger, 'test': test_logger}}
     save(result, './output/result/{}.pt'.format(cfg['model_tag']))
     return
 
 
-def test(data_loader, model, sparsity_index, metric, logger, epoch):
+def test(data_loader, model, sparsity_index, norm, metric, logger, epoch):
     logger.safe(True)
     with torch.no_grad():
         model.train(False)
@@ -68,6 +69,7 @@ def test(data_loader, model, sparsity_index, metric, logger, epoch):
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model)
+    norm.make_norm(model)
     logger.safe(False)
     return
 

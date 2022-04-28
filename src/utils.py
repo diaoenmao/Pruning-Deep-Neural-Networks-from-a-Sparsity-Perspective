@@ -145,7 +145,8 @@ def process_control():
         cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')
-    cfg['q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    cfg['si_q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    cfg['norm_q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     cfg['stats'] = make_stats()
     return
 

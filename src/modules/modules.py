@@ -29,6 +29,26 @@ class SparsityIndex:
         return
 
 
+class Norm:
+    def __init__(self, q):
+        self.q = q
+        self.norm = []
+
+    def make_norm(self, model, mask=None):
+        norm = []
+        for i in range(len(self.q)):
+            norm_i = OrderedDict()
+            for name, param in model.state_dict().items():
+                parameter_type = name.split('.')[-1]
+                if 'weight' in parameter_type:
+                    if mask is not None:
+                        param = param * mask[name].to(param.device).float()
+                    norm_i[name] = torch.linalg.norm(param, self.q[i], dim=-1)
+            norm.append(norm_i)
+        self.norm.append(norm)
+        return
+
+
 class Compression:
     def __init__(self, prune_ratio, prune_mode):
         self.init_model_state_dict = models.load_init_state_dict(cfg['seed'])
