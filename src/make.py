@@ -80,7 +80,8 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global', 'once-layer']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-layer', 'once-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_student.py'.format(run)]]
@@ -92,7 +93,8 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global', 'lt-layer']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-layer', 'lt-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
         raise ValueError('Not valid mode')
