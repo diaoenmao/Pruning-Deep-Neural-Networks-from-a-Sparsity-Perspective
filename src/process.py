@@ -83,6 +83,9 @@ def main():
     make_vis_by_dataset(df_exp, 'SI')
     make_vis_by_model(df_exp, 'SI')
     make_vis_by_layer(df_exp, 'SI')
+    make_vis_by_dataset(df_exp, 'SIe')
+    make_vis_by_model(df_exp, 'SIe')
+    make_vis_by_layer(df_exp, 'SIe')
     # make_vis_by_dataset(df_exp, 'Norm')
     # make_vis_by_model(df_exp, 'Norm')
     # make_vis_by_layer(df_exp, 'Norm')
@@ -111,6 +114,7 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
             q = base_result['sparsity_index'].q
+            # q = [0.5]
             for k in base_result['sparsity_index'].si:
                 for i in range(len(q)):
                     metric_name = 'SI-{}-{}'.format(k, q[i])
@@ -121,6 +125,15 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                         si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
                         si_k_i.extend(si_k_i_m)
                     processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
+                for i in range(len(q)):
+                    metric_name = 'SIe-{}-{}'.format(k, q[i])
+                    if metric_name not in processed_result_exp:
+                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                    sie_k_i = []
+                    for m in range(len(base_result['sparsity_index'].sie[k])):
+                        sie_k_i_m = make_y(base_result['sparsity_index'].sie[k][m][i], k)
+                        sie_k_i.extend(sie_k_i_m)
+                    processed_result_exp[metric_name]['exp'][exp_idx] = sie_k_i
             q = base_result['norm'].q
             for k in base_result['norm'].norm:
                 for i in range(len(q)):
@@ -230,7 +243,7 @@ def make_vis_by_dataset(df, y_name):
         z_color_dict = {'MNIST': 'blue', 'FashionMNIST': 'cyan', 'CIFAR10': 'blue', 'SVHN': 'cyan'}
         z_linestyle_dict = {'MNIST': '-.', 'FashionMNIST': ':', 'CIFAR10': '-.', 'SVHN': ':'}
         pivot_data_name_dict = {'MNIST': 'MNIST', 'FashionMNIST': 'MNIST', 'CIFAR10': 'CIFAR10', 'SVHN': 'CIFAR10'}
-        y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
+        y_name_dict = {'SI': 'Sparsity Index (SI)', 'SIe': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
         pivot_metric_names = ['Accuracy', 'Loss', 'Loss-Teacher']
         controls = []
@@ -320,7 +333,7 @@ def make_vis_by_model(df, y_name):
                             'mlp-256-1-4-relu': ':'}
         label_dict = {'mlp-128-1-2-relu': '$N=128$, $L=2$', 'mlp-256-1-2-relu': '$N=256$, $L=2$',
                       'mlp-128-1-4-relu': '$N=128$, $L=4$', 'mlp-256-1-4-relu': '$N=256$, $L=4$'}
-        y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
+        y_name_dict = {'SI': 'Sparsity Index (SI)', 'SIe': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
         pivot_metric_names = ['Accuracy', 'Loss', 'Loss-Teacher']
         controls = []
@@ -371,7 +384,7 @@ def make_vis_by_model(df, y_name):
                         lns1 = ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                                         label='{}, {}'.format(label_dict[label], y_name))
                         lns2 = ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
-                                        label='{}, PD'.format(label_dict[label]))
+                                        label='{}, PD ({})'.format(label_dict[label], pivot_metric_names_i))
                         lns[fig_name].extend(lns1 + lns2)
                         ax1.set_yscale(y_scale)
                         ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
@@ -404,7 +417,7 @@ def make_vis_by_layer(df, y_name):
         linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (0, (1, 10)), 'all': (0, (5, 10))}
         z_color_dict = {'0': 'red', '1': 'orange', '2': 'blue', '3': 'cyan', '4': 'green', 'all': 'black'}
         z_linestyle_dict = {'0': '-', '1': '--', '2': '-.', '3': ':', '4': (0, (1, 10)), 'all': (0, (5, 10))}
-        y_name_dict = {'SI': 'Sparsity Index (SI)', 'Norm': 'Norm'}
+        y_name_dict = {'SI': 'Sparsity Index (SI)', 'SIe': 'Sparsity Index (SI)', 'Norm': 'Norm'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
         controls = []
         for mode_i in mode:
@@ -477,7 +490,8 @@ def make_y(input, mode):
     if mode == 'neuron':
         y = []
         for name, param in input.items():
-            y.append(param.mean())
+            valid_param = param[~param.isnan()]
+            y.append(valid_param.mean())
     elif mode == 'layer':
         y = []
         for name, param in input.items():

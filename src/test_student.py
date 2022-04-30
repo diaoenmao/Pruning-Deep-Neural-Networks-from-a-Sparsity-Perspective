@@ -85,7 +85,7 @@ def test(data_loader, model, teacher_model, compression, sparsity_index, norm, m
                          'Test Iter: {}/{}'.format(iter, cfg['prune_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model)
+    sparsity_index.make_sparsity_index(model, compression.mask[iter - 1])
     norm.make_norm(model)
     logger.safe(False)
     return

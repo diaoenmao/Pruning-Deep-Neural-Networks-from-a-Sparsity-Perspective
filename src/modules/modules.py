@@ -13,6 +13,7 @@ class SparsityIndex:
     def __init__(self, q):
         self.q = q
         self.si = {'neuron': [], 'layer': [], 'global': []}
+        self.sie = {'neuron': [], 'layer': [], 'global': []}
 
     def sparsity_index(self, x, q, dim):
         d = float(x.size(dim))
@@ -22,10 +23,19 @@ class SparsityIndex:
         si[si.isnan()] = ub
         return si
 
-    def make_sparsity_index(self, model):
+    def sparsity_index_excluded(self, x, mask, q, dim):
+        d = mask.to(x.device).float().sum(dim=dim)
+        si = (torch.linalg.norm(x, 1, dim=dim).pow(1) / d).pow(1) / \
+             (torch.linalg.norm(x, q, dim=dim).pow(q) / d).pow(1 / q)
+        return si
+
+    def make_sparsity_index(self, model, mask=None):
         self.si['neuron'].append(self.make_sparsity_index_(model, 'neuron'))
         self.si['layer'].append(self.make_sparsity_index_(model, 'layer'))
         self.si['global'].append(self.make_sparsity_index_(model, 'global'))
+        self.sie['neuron'].append(self.make_sparsity_index_excluded_(model, mask, 'neuron'))
+        self.sie['layer'].append(self.make_sparsity_index_excluded_(model, mask, 'layer'))
+        self.sie['global'].append(self.make_sparsity_index_excluded_(model, mask, 'global'))
         return
 
     def make_sparsity_index_(self, model, mode):
@@ -57,6 +67,45 @@ class SparsityIndex:
                         param_all.append(param.view(-1))
                 param_all = torch.cat(param_all, dim=0)
                 si_i = self.sparsity_index(param_all, self.q[i], -1)
+                si.append(si_i)
+        else:
+            raise ValueError('Not valid mode')
+        return si
+
+    def make_sparsity_index_excluded_(self, model, mask, mode):
+        if mask is None:
+            return self.make_sparsity_index_(model, mode)
+        if mode == 'neuron':
+            si = []
+            for i in range(len(self.q)):
+                si_i = OrderedDict()
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        si_i[name] = self.sparsity_index_excluded(param, mask[name], self.q[i], -1)
+                si.append(si_i)
+        elif mode == 'layer':
+            si = []
+            for i in range(len(self.q)):
+                si_i = OrderedDict()
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        si_i[name] = self.sparsity_index_excluded(param.view(-1), mask[name].view(-1), self.q[i], -1)
+                si.append(si_i)
+        elif mode == 'global':
+            si = []
+            for i in range(len(self.q)):
+                param_all = []
+                mask_all = []
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        param_all.append(param.view(-1))
+                        mask_all.append(mask[name].view(-1))
+                param_all = torch.cat(param_all, dim=0)
+                mask_all = torch.cat(mask_all, dim=0)
+                si_i = self.sparsity_index_excluded(param_all, mask_all, self.q[i], -1)
                 si.append(si_i)
         else:
             raise ValueError('Not valid mode')
