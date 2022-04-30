@@ -66,19 +66,47 @@ class SparsityIndex:
 class Norm:
     def __init__(self, q):
         self.q = q
-        self.norm = []
+        self.norm = {'neuron': [], 'layer': [], 'global': []}
 
     def make_norm(self, model):
-        norm = []
-        for i in range(len(self.q)):
-            norm_i = OrderedDict()
-            for name, param in model.state_dict().items():
-                parameter_type = name.split('.')[-1]
-                if 'weight' in parameter_type:
-                    norm_i[name] = torch.linalg.norm(param, self.q[i], dim=-1)
-            norm.append(norm_i)
-        self.norm.append(norm)
+        self.norm['neuron'].append(self.make_norm_(model, 'neuron'))
+        self.norm['layer'].append(self.make_norm_(model, 'layer'))
+        self.norm['global'].append(self.make_norm_(model, 'global'))
         return
+
+    def make_norm_(self, model, mode):
+        if mode == 'neuron':
+            norm = []
+            for i in range(len(self.q)):
+                norm_i = OrderedDict()
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        norm_i[name] = torch.linalg.norm(param, self.q[i], dim=-1)
+                norm.append(norm_i)
+        elif mode == 'layer':
+            norm = []
+            for i in range(len(self.q)):
+                norm_i = OrderedDict()
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        norm_i[name] = torch.linalg.norm(param.view(-1), self.q[i], dim=-1)
+                norm.append(norm_i)
+        elif mode == 'global':
+            norm = []
+            for i in range(len(self.q)):
+                param_all = []
+                for name, param in model.state_dict().items():
+                    parameter_type = name.split('.')[-1]
+                    if 'weight' in parameter_type:
+                        param_all.append(param.view(-1))
+                param_all = torch.cat(param_all, dim=0)
+                norm_i = torch.linalg.norm(param_all, self.q[i], dim=-1)
+                norm.append(norm_i)
+        else:
+            raise ValueError('Not valid mode')
+        return norm
 
 
 class Compression:

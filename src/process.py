@@ -13,6 +13,7 @@ save_format = 'png'
 vis_path = './output/vis/{}'.format(save_format)
 num_experiments = 1
 exp = [str(x) for x in list(range(num_experiments))]
+y_scale = 'linear'
 
 
 def make_controls(control_name):
@@ -79,8 +80,8 @@ def main():
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
     df_history = make_df_result(extracted_processed_result_history, 'history')
-    # make_vis_by_dataset(df_exp, 'SI')
-    # make_vis_by_model(df_exp, 'SI')
+    make_vis_by_dataset(df_exp, 'SI')
+    make_vis_by_model(df_exp, 'SI')
     make_vis_by_layer(df_exp, 'SI')
     # make_vis_by_dataset(df_exp, 'Norm')
     # make_vis_by_model(df_exp, 'Norm')
@@ -110,34 +111,38 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
             q = base_result['sparsity_index'].q
-            for i in range(len(q)):
-                metric_name = 'SI-{}'.format(q[i])
-                if metric_name not in processed_result_exp:
-                    processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                si_i = []
-                for m in range(len(base_result['sparsity_index'].si)):
-                    si_i_m = make_y(base_result['sparsity_index'].si[m][i])
-                    si_i.extend(si_i_m)
-                processed_result_exp[metric_name]['exp'][exp_idx] = si_i
+            for k in base_result['sparsity_index'].si:
+                for i in range(len(q)):
+                    metric_name = 'SI-{}-{}'.format(k, q[i])
+                    if metric_name not in processed_result_exp:
+                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                    si_k_i = []
+                    for m in range(len(base_result['sparsity_index'].si[k])):
+                        si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
+                        si_k_i.extend(si_k_i_m)
+                    processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
             q = base_result['norm'].q
-            for i in range(len(q)):
-                metric_name = 'Norm-{}'.format(q[i])
-                if metric_name not in processed_result_exp:
-                    processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                norm_i = []
-                for m in range(len(base_result['norm'].norm)):
-                    norm_i_m = make_y(base_result['norm'].norm[m][i])
-                    norm_i.extend(norm_i_m)
-                processed_result_exp[metric_name]['exp'][exp_idx] = norm_i
+            for k in base_result['norm'].norm:
+                for i in range(len(q)):
+                    metric_name = 'Norm-{}-{}'.format(k, q[i])
+                    if metric_name not in processed_result_exp:
+                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                    norm_k_i = []
+                    for m in range(len(base_result['norm'].norm[k])):
+                        norm_k_i_m = make_y(base_result['norm'].norm[k][m][i], k)
+                        norm_k_i.extend(norm_k_i_m)
+                    processed_result_exp[metric_name]['exp'][exp_idx] = norm_k_i
             if 'compression' in base_result:
-                metric_name = 'CR'
-                if metric_name not in processed_result_exp:
-                    processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                cr = []
-                for m in range(len(base_result['compression'].mask)):
-                    cr_m = make_cr(base_result['compression'].mask[m])
-                    cr.extend(cr_m)
-                processed_result_exp[metric_name]['exp'][exp_idx] = cr
+                mode = ['neuron', 'layer', 'global']
+                for k in mode:
+                    metric_name = 'CR-{}'.format(k)
+                    if metric_name not in processed_result_exp:
+                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                    cr = []
+                    for m in range(len(base_result['compression'].mask)):
+                        cr_m = make_cr(base_result['compression'].mask[m], k)
+                        cr.extend(cr_m)
+                    processed_result_exp[metric_name]['exp'][exp_idx] = cr
             for k in base_result['logger']['train'].history:
                 metric_name = k.split('/')[1]
                 if metric_name not in processed_result_history:
@@ -244,7 +249,7 @@ def make_vis_by_dataset(df, y_name):
             if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
                     y_name in metric_name and stats == 'mean':
                 prune_iters = df_name_list[-5]
-                _, q = df_name_list[-2].split('-')
+                _, type, q = df_name_list[-2].split('-')
                 for i in range(len(pivot_metric_names)):
                     pivot_metric_names_i = pivot_metric_names[i]
                     df_name_y = df_name
@@ -260,8 +265,9 @@ def make_vis_by_dataset(df, y_name):
                     pivot_metric = np.concatenate([teacher_pivot_metric, pivot_metric], axis=0)
                     for j in range(y.shape[-1]):
                         pivot_data_name = pivot_data_name_dict[df_name_list[0]]
-                        layer_tag = str(j) if j < (y.shape[-1] - 1) else 'all'
-                        fig_name = '_'.join([pivot_data_name, *df_name_list[1:5], q, pivot_metric_names_i, layer_tag])
+                        layer_tag = str(j)
+                        fig_name = '_'.join([pivot_data_name, *df_name_list[1:5], type, q, pivot_metric_names_i,
+                                             layer_tag])
                         label = df_name_list[0]
                         fig[fig_name] = plt.figure(fig_name)
                         if fig_name not in AX1:
@@ -275,8 +281,9 @@ def make_vis_by_dataset(df, y_name):
                         lns1 = ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                                         label='{}, {}'.format(label, y_name))
                         lns2 = ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
-                                        label='{}, PD'.format(label))
+                                        label='{}, PD ({})'.format(label, pivot_metric_names_i))
                         lns[fig_name].extend(lns1 + lns2)
+                        ax1.set_yscale(y_scale)
                         ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
                         ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
                         ax2.set_ylabel('Performance Degradation (PD)', fontsize=fontsize['label'])
@@ -332,7 +339,7 @@ def make_vis_by_model(df, y_name):
             if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
                     y_name in metric_name and stats == 'mean':
                 prune_iters = df_name_list[-5]
-                _, q = df_name_list[-2].split('-')
+                _, type, q = df_name_list[-2].split('-')
                 for i in range(len(pivot_metric_names)):
                     pivot_metric_names_i = pivot_metric_names[i]
                     df_name_y = df_name
@@ -348,9 +355,9 @@ def make_vis_by_model(df, y_name):
                     pivot_metric = np.concatenate([teacher_pivot_metric, pivot_metric], axis=0)
                     for j in range(y.shape[-1]):
                         L = df_name_list[1].split('-')[-2]
-                        layer_tag = str(j) if j < (y.shape[-1] - 1) else 'all'
-                        fig_name = '_'.join([df_name_list[0], *df_name_list[2:5], q,
-                                             pivot_metric_names_i, str(L), layer_tag])
+                        layer_tag = str(j)
+                        fig_name = '_'.join([df_name_list[0], *df_name_list[2:5], type, q, pivot_metric_names_i,
+                                             str(L), layer_tag])
                         label = df_name_list[1]
                         fig[fig_name] = plt.figure(fig_name)
                         if fig_name not in AX1:
@@ -366,6 +373,7 @@ def make_vis_by_model(df, y_name):
                         lns2 = ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
                                         label='{}, PD'.format(label_dict[label]))
                         lns[fig_name].extend(lns1 + lns2)
+                        ax1.set_yscale(y_scale)
                         ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
                         ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
                         ax2.set_ylabel('Performance Degradation (PD)', fontsize=fontsize['label'])
@@ -413,9 +421,9 @@ def make_vis_by_layer(df, y_name):
             if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
                     'global' in df_name_control_name and y_name in metric_name and stats == 'mean':
                 prune_iters = df_name_list[-5]
-                _, q = df_name_list[-2].split('-')
+                _, type, q = df_name_list[-2].split('-')
                 df_name_y = df_name
-                df_name_cr = '_'.join([*df_name_list[:-2], 'CR', stats])
+                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-{}'.format(type), stats])
                 y = df[df_name_y].iloc[0].to_numpy()
                 cr = df[df_name_cr].iloc[0].to_numpy()
                 teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
@@ -424,18 +432,19 @@ def make_vis_by_layer(df, y_name):
                 y = y.reshape((int(prune_iters) + 1, -1))
                 cr = cr.reshape((int(prune_iters) + 1, -1))
                 for j in range(y.shape[-1]):
-                    fig_name = '_'.join([*df_name_list[:5], q, 'CR'])
+                    fig_name = '_'.join([*df_name_list[:5], type, q, 'CR'])
                     fig[fig_name] = plt.figure(fig_name)
                     if fig_name not in AX1:
                         AX1[fig_name] = fig[fig_name].add_subplot(121)
                         AX2[fig_name] = fig[fig_name].add_subplot(122)
                     ax1 = AX1[fig_name]
                     ax2 = AX2[fig_name]
-                    label = str(j) if j < (y.shape[-1] - 1) else 'all'
+                    label = str(j)
                     x = np.arange(int(prune_iters))
                     y_j = y[:-1, j]
                     ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                              label='$\ell={}$'.format(label))
+                    ax1.set_yscale(y_scale)
                     ax1.legend(loc='upper left', fontsize=fontsize['legend'])
                     ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
                     ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
@@ -464,28 +473,45 @@ def make_vis_by_layer(df, y_name):
     return
 
 
-def make_y(input):
-    y = []
-    valid_param = []
-    for name, param in input.items():
-        valid_param_i = param[~param.isnan()]
-        valid_param.append(valid_param_i.view(-1))
-        y.append(valid_param_i.mean())
-    valid_param = torch.cat(valid_param)
-    y.append(valid_param.mean())
+def make_y(input, mode):
+    if mode == 'neuron':
+        y = []
+        for name, param in input.items():
+            y.append(param.mean())
+    elif mode == 'layer':
+        y = []
+        for name, param in input.items():
+            y.append(param)
+    elif mode == 'global':
+        y = [input]
+    else:
+        raise ValueError('Not valid mode')
     return y
 
 
-def make_cr(input):
-    cr = []
-    mask = []
-    for name, param in input.items():
-        mask_i = param.view(-1).float()
-        cr_i = mask_i.mean().item()
-        mask.append(mask_i)
-        cr.append(cr_i)
-    mask = torch.cat(mask)
-    cr.append(mask.mean())
+def make_cr(input, mode):
+    if mode == 'neuron':
+        cr = []
+        for name, param in input.items():
+            mask_i = param.view(-1).float()
+            cr_i = mask_i.mean(dim=-1).item()
+            cr.append(cr_i)
+    elif mode == 'layer':
+        cr = []
+        for name, param in input.items():
+            mask_i = param.view(-1).float()
+            cr_i = mask_i.mean().item()
+            cr.append(cr_i)
+    elif mode == 'global':
+        cr = []
+        param_all = []
+        for name, param in input.items():
+            param_all.append(param.view(-1))
+        param_all = torch.cat(param_all, dim=0)
+        mask = param_all.view(-1).float()
+        cr.append(mask.mean().item())
+    else:
+        raise ValueError('Not valid mode')
     return cr
 
 
