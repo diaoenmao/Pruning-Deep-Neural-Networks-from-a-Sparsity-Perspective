@@ -80,9 +80,9 @@ def main():
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
     df_history = make_df_result(extracted_processed_result_history, 'history')
-    make_vis_by_dataset(df_exp, 'SI')
-    make_vis_by_model(df_exp, 'SI')
-    make_vis_by_layer(df_exp, 'SI')
+    # make_vis_by_dataset(df_exp, 'SI')
+    # make_vis_by_model(df_exp, 'SI')
+    # make_vis_by_layer(df_exp, 'SI')
     make_vis_by_dataset(df_exp, 'SIe')
     make_vis_by_model(df_exp, 'SIe')
     make_vis_by_layer(df_exp, 'SIe')
@@ -113,18 +113,18 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                 if metric_name not in processed_result_exp:
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
-            q = base_result['sparsity_index'].q
-            # q = [0.5]
+            # q = base_result['sparsity_index'].q
+            q = [0.5]
             for k in base_result['sparsity_index'].si:
-                for i in range(len(q)):
-                    metric_name = 'SI-{}-{}'.format(k, q[i])
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    si_k_i = []
-                    for m in range(len(base_result['sparsity_index'].si[k])):
-                        si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
-                        si_k_i.extend(si_k_i_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
+                # for i in range(len(q)):
+                #     metric_name = 'SI-{}-{}'.format(k, q[i])
+                #     if metric_name not in processed_result_exp:
+                #         processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+                #     si_k_i = []
+                #     for m in range(len(base_result['sparsity_index'].si[k])):
+                #         si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
+                #         si_k_i.extend(si_k_i_m)
+                #     processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
                 for i in range(len(q)):
                     metric_name = 'SIe-{}-{}'.format(k, q[i])
                     if metric_name not in processed_result_exp:
@@ -134,17 +134,17 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                         sie_k_i_m = make_y(base_result['sparsity_index'].sie[k][m][i], k)
                         sie_k_i.extend(sie_k_i_m)
                     processed_result_exp[metric_name]['exp'][exp_idx] = sie_k_i
-            q = base_result['norm'].q
-            for k in base_result['norm'].norm:
-                for i in range(len(q)):
-                    metric_name = 'Norm-{}-{}'.format(k, q[i])
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    norm_k_i = []
-                    for m in range(len(base_result['norm'].norm[k])):
-                        norm_k_i_m = make_y(base_result['norm'].norm[k][m][i], k)
-                        norm_k_i.extend(norm_k_i_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = norm_k_i
+            # q = base_result['norm'].q
+            # for k in base_result['norm'].norm:
+            #     for i in range(len(q)):
+            #         metric_name = 'Norm-{}-{}'.format(k, q[i])
+            #         if metric_name not in processed_result_exp:
+            #             processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+            #         norm_k_i = []
+            #         for m in range(len(base_result['norm'].norm[k])):
+            #             norm_k_i_m = make_y(base_result['norm'].norm[k][m][i], k)
+            #             norm_k_i.extend(norm_k_i_m)
+            #         processed_result_exp[metric_name]['exp'][exp_idx] = norm_k_i
             if 'compression' in base_result:
                 mode = ['neuron', 'layer', 'global']
                 for k in mode:
@@ -289,8 +289,8 @@ def make_vis_by_dataset(df, y_name):
                         ax1 = AX1[fig_name]
                         ax2 = AX2[fig_name]
                         x = np.arange(int(prune_iters))
-                        y_j = y[:-1, j]
-                        z = make_z(pivot_metric, pivot_metric_names_i)
+                        y_j = make_y_figure(y[:, j], y_name)
+                        z = make_z_figure(pivot_metric, pivot_metric_names_i)
                         lns1 = ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                                         label='{}, {}'.format(label, y_name))
                         lns2 = ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
@@ -379,8 +379,8 @@ def make_vis_by_model(df, y_name):
                         ax1 = AX1[fig_name]
                         ax2 = AX2[fig_name]
                         x = np.arange(int(prune_iters))
-                        y_j = y[:-1, j]
-                        z = make_z(pivot_metric, pivot_metric_names_i)
+                        y_j = make_y_figure(y[:, j], y_name)
+                        z = make_z_figure(pivot_metric, pivot_metric_names_i)
                         lns1 = ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                                         label='{}, {}'.format(label_dict[label], y_name))
                         lns2 = ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
@@ -453,8 +453,8 @@ def make_vis_by_layer(df, y_name):
                     ax1 = AX1[fig_name]
                     ax2 = AX2[fig_name]
                     label = str(j)
-                    x = np.arange(int(prune_iters))
-                    y_j = y[:-1, j]
+                    x = np.arange(int(prune_iters) + 1)
+                    y_j = y[:, j]
                     ax1.plot(x, y_j, color=color_dict[label], linestyle=linestyle_dict[label],
                              label='$\ell={}$'.format(label))
                     ax1.set_yscale(y_scale)
@@ -463,7 +463,7 @@ def make_vis_by_layer(df, y_name):
                     ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
                     ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                     ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                    z = cr[1:, j]
+                    z = cr[:, j]
                     ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
                              label='$\ell={}$'.format(label))
                     ax2.legend(loc='upper left', fontsize=fontsize['legend'])
@@ -529,7 +529,18 @@ def make_cr(input, mode):
     return cr
 
 
-def make_z(pivot_metric, pivot_metric_name):
+def make_y_figure(y, y_name):
+    if y_name in ['SI']:
+        y = y[:-1]
+    elif y_name in ['SIe']:
+        # y = np.maximum(-np.diff(y), 0)
+        y = -np.diff(y)
+    else:
+        raise ValueError('Not valid pivot metric name')
+    return y
+
+
+def make_z_figure(pivot_metric, pivot_metric_name):
     if pivot_metric_name in ['Accuracy']:
         z = (pivot_metric[0] - pivot_metric[1:]) / pivot_metric[0]
     elif pivot_metric_name in ['Loss']:
