@@ -17,21 +17,9 @@ def init_param(m):
         if m.bias is not None:
             m.bias.data.zero_()
     elif isinstance(m, nn.Linear):
+        # nn.init.uniform_(m.weight)
         if m.bias is not None:
             m.bias.data.zero_()
-    return m
-
-
-def init_param_generator(m):
-    if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif isinstance(m, nn.BatchNorm2d):
-        if m.weight is not None:
-            m.weight.data.fill_(1)
-        if m.bias is not None:
-            m.bias.data.zero_()
-    elif isinstance(m, nn.Linear):
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
     return m
 
 
