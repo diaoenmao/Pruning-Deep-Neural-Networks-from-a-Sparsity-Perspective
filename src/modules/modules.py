@@ -173,44 +173,65 @@ class Compression:
                 mask[name] = param.new_ones(param.size(), dtype=torch.bool)
         return mask
 
-    def prune(self, model, si=None):
+    def make_bound(self, sie, d, q, eta_m):
+        m = d * sie ** (q / (q - 1)) * (1 + eta_m) ** (1 / (q - 1))
+        m = torch.ceil(m).long()
+        return m
+
+    def prune(self, model, sparsity_index=None):
         if self.prune_mode[1] == 'neuron':
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
-                    if self.prune_ratio == 'si':
-                        pass
+                    if 'si' in self.prune_ratio:
+                        prune_ratio_list = self.prune_ratio.split('-')
+                        q, eta_m = float(prune_ratio_list[1]), float(prune_ratio_list[2])
+                        q_idx = cfg['si_q'].index(q)
+                        mask = self.mask[-1][name]
+                        sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
+                        d = mask.float().sum(-1).to(sie_i.device)
+                        m = self.make_bound(sie_i, d, q, eta_m)
+                        pivot_value = torch.sort(param.data.abs(), dim=-1)[0][
+                            torch.arange(param.size(0)), m].view(-1, 1)
                     else:
                         mask = self.mask[-1][name]
                         masked_param = param.clone()
                         prune_ratio = float(self.prune_ratio)
                         masked_param[mask] = float('nan')
                         pivot_param_i = masked_param.abs()
-                        percentile_value = torch.nanquantile(pivot_param_i, prune_ratio, dim=-1, keepdim=True)
-                        percentile_mask = (param.data.abs() < percentile_value).to('cpu')
-                        new_mask[name] = torch.where(percentile_mask, False, mask)
-                        param.data = torch.where(new_mask[name].to(param.device), param.data,
-                                                 torch.tensor(0, dtype=torch.float, device=param.device))
+                        pivot_value = torch.nanquantile(pivot_param_i, prune_ratio, dim=-1, keepdim=True)
+                    pivot_mask = (param.data.abs() <= pivot_value).to('cpu')
+                    new_mask[name] = torch.where(pivot_mask, False, mask)
+                    param.data = torch.where(new_mask[name].to(param.device), param.data,
+                                             torch.tensor(0, dtype=torch.float, device=param.device))
         elif self.prune_mode[1] == 'layer':
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
-                    if self.prune_ratio == 'si':
-                        pass
+                    if 'si' in self.prune_ratio:
+                        prune_ratio_list = self.prune_ratio.split('-')
+                        q, eta_m = float(prune_ratio_list[1]), float(prune_ratio_list[2])
+                        q_idx = cfg['si_q'].index(q)
+                        mask = self.mask[-1][name]
+                        sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
+                        d = mask.float().sum().to(sie_i.device)
+                        m = self.make_bound(sie_i, d, q, eta_m)
+                        pivot_value = torch.sort(param.data.abs().view(-1))[0][m]
                     else:
                         mask = self.mask[-1][name]
                         masked_param = param[mask]
                         prune_ratio = float(self.prune_ratio)
                         pivot_param_i = masked_param.abs()
-                        percentile_value = torch.quantile(pivot_param_i, prune_ratio)
-                        percentile_mask = (param.data.abs() < percentile_value).to('cpu')
-                        new_mask[name] = torch.where(percentile_mask, False, mask)
-                        param.data = torch.where(new_mask[name].to(param.device), param.data,
-                                                 torch.tensor(0, dtype=torch.float, device=param.device))
+                        pivot_value = torch.quantile(pivot_param_i, prune_ratio)
+                    pivot_mask = (param.data.abs() <= pivot_value).to('cpu')
+                    new_mask[name] = torch.where(pivot_mask, False, mask)
+                    param.data = torch.where(new_mask[name].to(param.device), param.data,
+                                             torch.tensor(0, dtype=torch.float, device=param.device))
         elif self.prune_mode[1] == 'global':
             pivot_param = []
+            pivot_mask = []
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
                 if 'weight' in parameter_type:
@@ -218,21 +239,30 @@ class Compression:
                     masked_param = param[mask]
                     pivot_param_i = masked_param.abs()
                     pivot_param.append(pivot_param_i.view(-1))
+                    pivot_mask.append(mask.view(-1))
             pivot_param = torch.cat(pivot_param, dim=0)
-            if self.prune_ratio == 'si':
-                pass
+            pivot_mask = torch.cat(pivot_mask, dim=0)
+            if 'si' in self.prune_ratio:
+                prune_ratio_list = self.prune_ratio.split('-')
+                q, eta_m = float(prune_ratio_list[1]), float(prune_ratio_list[2])
+                q_idx = cfg['si_q'].index(q)
+                mask = pivot_mask
+                sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx]
+                d = mask.float().sum().to(sie_i.device)
+                m = self.make_bound(sie_i, d, q, eta_m)
+                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][m]
             else:
                 prune_ratio = float(self.prune_ratio)
-                percentile_value = torch.quantile(pivot_param, prune_ratio)
-                new_mask = OrderedDict()
-                for name, param in model.named_parameters():
-                    parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
-                        mask = self.mask[-1][name]
-                        percentile_mask = (param.data.abs() < percentile_value).to('cpu')
-                        new_mask[name] = torch.where(percentile_mask, False, mask)
-                        param.data = torch.where(new_mask[name].to(param.device), param.data,
-                                                 torch.tensor(0, dtype=torch.float, device=param.device))
+                pivot_value = torch.quantile(pivot_param, prune_ratio)
+            new_mask = OrderedDict()
+            for name, param in model.named_parameters():
+                parameter_type = name.split('.')[-1]
+                if 'weight' in parameter_type:
+                    mask = self.mask[-1][name]
+                    percentile_mask = (param.data.abs() < pivot_value).to('cpu')
+                    new_mask[name] = torch.where(percentile_mask, False, mask)
+                    param.data = torch.where(new_mask[name].to(param.device), param.data,
+                                             torch.tensor(0, dtype=torch.float, device=param.device))
         else:
             raise ValueError('Not valid prune mode')
         self.mask.append(new_mask)

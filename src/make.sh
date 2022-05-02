@@ -36,3 +36,15 @@ python make.py --mode lt --model mlp --data CIFAR10 --run test --round 12 --spli
 
 python make.py --mode lt --model mlp --data SVHN --run train --round 12 --split_round 1
 python make.py --mode lt --model mlp --data SVHN --run test --round 12 --split_round 1
+
+python make.py --mode si --model mlp --data MNIST --run train --round 12 --split_round 1
+python make.py --mode si --model mlp --data MNIST --run test --round 12 --split_round 1
+
+python make.py --mode si --model mlp --data FashionMNIST --run train --round 12 --split_round 1
+python make.py --mode si --model mlp --data FashionMNIST --run test --round 12 --split_round 1
+
+python make.py --mode si --model mlp --data CIFAR10 --run train --round 12 --split_round 1
+python make.py --mode si --model mlp --data CIFAR10 --run test --round 12 --split_round 1
+
+python make.py --mode si --model mlp --data SVHN --run train --round 12 --split_round 1
+python make.py --mode si --model mlp --data SVHN --run test --round 12 --split_round 1
