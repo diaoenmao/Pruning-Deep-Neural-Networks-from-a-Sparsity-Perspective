@@ -17,7 +17,6 @@ def init_param(m):
         if m.bias is not None:
             m.bias.data.zero_()
     elif isinstance(m, nn.Linear):
-        # nn.init.uniform_(m.weight)
         if m.bias is not None:
             m.bias.data.zero_()
     return m

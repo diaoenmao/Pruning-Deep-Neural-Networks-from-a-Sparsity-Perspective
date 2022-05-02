@@ -81,7 +81,6 @@ def main():
         else:
             model_name = [model]
         control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_student.py'.format(run)]]
@@ -94,7 +93,18 @@ def main():
         else:
             model_name = [model]
         control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron']]]
+        controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
+    elif mode == 'si':
+        script_name = [['{}_student.py'.format(run)]]
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            model_name = [model]
+        control_name = [[data_name, model_name, ['30'], ['si'], ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
         raise ValueError('Not valid mode')

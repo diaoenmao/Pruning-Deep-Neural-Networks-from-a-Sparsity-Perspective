@@ -46,6 +46,7 @@ def runExperiment():
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
     model.load_state_dict(result['model_state_dict'])
+    sparsity_index = SparsityIndex(cfg['si_q'])
     compression = Compression(cfg['prune_ratio'], cfg['prune_mode'])
     optimizer = make_optimizer(model, cfg['model_name'])
     scheduler = make_scheduler(optimizer, cfg['model_name'])
@@ -67,7 +68,7 @@ def runExperiment():
         if last_epoch == 1:
             if cfg['prune_mode'][0] == 'once':
                 result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
-            elif cfg['prune_mode'][0] == 'lt':
+            elif cfg['prune_mode'][0] in ['lt', 'si']:
                 if iter == 1:
                     result = resume('./output/model/{}_{}.pt'.format(cfg['teacher_model_tag'], 'best'))
                 else:
@@ -75,7 +76,8 @@ def runExperiment():
             else:
                 raise ValueError('Not valid prune mode')
             model.load_state_dict(result['model_state_dict'])
-            compression.prune(model)
+            sparsity_index.make_sparsity_index(model)
+            compression.prune(model, sparsity_index)
             compression.init(model)
             optimizer = make_optimizer(model, cfg['model_name'])
             scheduler = make_scheduler(optimizer, cfg['model_name'])
