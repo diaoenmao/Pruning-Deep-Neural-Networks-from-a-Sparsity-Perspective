@@ -196,10 +196,10 @@ class Compression:
                             torch.arange(param.size(0)), m].view(-1, 1)
                     else:
                         mask = self.mask[-1][name]
-                        masked_param = param.clone()
+                        masked_param = param.clone().abs()
                         prune_ratio = float(self.prune_ratio)
-                        masked_param[mask] = float('nan')
-                        pivot_param_i = masked_param.abs()
+                        masked_param[~mask] = float('nan')
+                        pivot_param_i = masked_param
                         pivot_value = torch.nanquantile(pivot_param_i, prune_ratio, dim=-1, keepdim=True)
                     pivot_mask = (param.data.abs() <= pivot_value).to('cpu')
                     new_mask[name] = torch.where(pivot_mask, False, mask)

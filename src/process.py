@@ -46,7 +46,8 @@ def make_control_list(mode, data, model):
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global', 'once-layer']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global']]]
         controls = make_controls(control_name)
     elif mode == 'lt':
         data_name = [data]
@@ -57,7 +58,20 @@ def make_control_list(mode, data, model):
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global', 'lt-layer']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global']]]
+        controls = make_controls(control_name)
+    elif mode == 'si':
+        data_name = [data]
+        if model == 'mlp':
+            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
+            model_name = list(itertools.product(*model_name))
+            for i in range(len(model_name)):
+                model_name[i] = '-'.join(model_name[i])
+        else:
+            raise ValueError('Not valid model')
+        control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-neuron', 'si-layer', 'si-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-global']]]
         controls = make_controls(control_name)
     else:
         raise ValueError('Not valid mode')
@@ -65,8 +79,10 @@ def make_control_list(mode, data, model):
 
 
 def main():
-    mode = ['teacher', 'once']
-    data = ['MNIST', 'FashionMNIST']
+    # mode = ['teacher', 'once', 'lt', 'si']
+    # data = ['MNIST', 'FashionMNIST', 'CIFAR10', 'SVHN']
+    mode = ['teacher', 'once', 'lt', 'si']
+    data = ['MNIST', 'FashionMNIST', 'CIFAR10', 'SVHN']
     controls = []
     for mode_i in mode:
         for data_i in data:
@@ -83,12 +99,13 @@ def main():
     # make_vis_by_dataset(df_exp, 'SI')
     # make_vis_by_model(df_exp, 'SI')
     # make_vis_by_layer(df_exp, 'SI')
-    make_vis_by_dataset(df_exp, 'SIe')
-    make_vis_by_model(df_exp, 'SIe')
-    make_vis_by_layer(df_exp, 'SIe')
+    # make_vis_by_dataset(df_exp, 'SIe')
+    # make_vis_by_model(df_exp, 'SIe')
+    # make_vis_by_layer(df_exp, 'SIe')
     # make_vis_by_dataset(df_exp, 'Norm')
     # make_vis_by_model(df_exp, 'Norm')
     # make_vis_by_layer(df_exp, 'Norm')
+    make_vis_by_prune(df_exp, 'Accuracy')
     return
 
 
@@ -114,26 +131,25 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                     processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
                 processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
             # q = base_result['sparsity_index'].q
-            q = [0.5]
-            for k in base_result['sparsity_index'].si:
-                # for i in range(len(q)):
-                #     metric_name = 'SI-{}-{}'.format(k, q[i])
-                #     if metric_name not in processed_result_exp:
-                #         processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                #     si_k_i = []
-                #     for m in range(len(base_result['sparsity_index'].si[k])):
-                #         si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
-                #         si_k_i.extend(si_k_i_m)
-                #     processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
-                for i in range(len(q)):
-                    metric_name = 'SIe-{}-{}'.format(k, q[i])
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    sie_k_i = []
-                    for m in range(len(base_result['sparsity_index'].sie[k])):
-                        sie_k_i_m = make_y(base_result['sparsity_index'].sie[k][m][i], k)
-                        sie_k_i.extend(sie_k_i_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = sie_k_i
+            # for k in base_result['sparsity_index'].si:
+            #     for i in range(len(q)):
+            #         metric_name = 'SI-{}-{}'.format(k, q[i])
+            #         if metric_name not in processed_result_exp:
+            #             processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+            #         si_k_i = []
+            #         for m in range(len(base_result['sparsity_index'].si[k])):
+            #             si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
+            #             si_k_i.extend(si_k_i_m)
+            #         processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
+            #     for i in range(len(q)):
+            #         metric_name = 'SIe-{}-{}'.format(k, q[i])
+            #         if metric_name not in processed_result_exp:
+            #             processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
+            #         sie_k_i = []
+            #         for m in range(len(base_result['sparsity_index'].sie[k])):
+            #             sie_k_i_m = make_y(base_result['sparsity_index'].sie[k][m][i], k)
+            #             sie_k_i.extend(sie_k_i_m)
+            #         processed_result_exp[metric_name]['exp'][exp_idx] = sie_k_i
             # q = base_result['norm'].q
             # for k in base_result['norm'].norm:
             #     for i in range(len(q)):
@@ -486,6 +502,78 @@ def make_vis_by_layer(df, y_name):
     return
 
 
+def make_vis_by_prune(df, y_name):
+    mode = ['teacher', 'once', 'lt', 'si']
+    data_all = [['MNIST'], ['FashionMNIST'], ['CIFAR10'], ['SVHN']]
+    for i in range(len(data_all)):
+        data = data_all[i]
+        color_dict = {'once': 'red', 'lt': 'orange', 'si': 'blue'}
+        linestyle_dict = {'once': '-', 'lt': '--', 'si': '-.'}
+        z_color_dict = {'once': 'red', 'lt': 'orange', 'si': 'blue'}
+        z_linestyle_dict = {'once': '-', 'lt': '--', 'si': '-.'}
+        fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
+        controls = []
+        for mode_i in mode:
+            for data_i in data:
+                controls += make_control_list(mode_i, data_i, 'mlp')
+        for i in range(len(controls)):
+            controls[i] = controls[i][1]
+        fig = {}
+        AX1, AX2 = {}, {}
+        for df_name in df:
+            df_name_list = df_name.split('_')
+            print(df_name_list)
+            df_name_control_name = '_'.join(df_name_list[:-2])
+            metric_name, stats = df_name_list[-2:]
+            if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
+                    y_name in metric_name and stats == 'mean':
+                prune_mode, type = df_name_list[-3].split('-')
+                df_name_y = df_name
+                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
+                y = df[df_name_y].iloc[0].to_numpy()
+                cr = df[df_name_cr].iloc[0].to_numpy()
+                teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
+                teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
+                y = np.concatenate([teacher_y, y], axis=0)
+                fig_name = '_'.join([*df_name_list[:3], type, metric_name])
+                fig[fig_name] = plt.figure(fig_name)
+                if fig_name not in AX1:
+                    AX1[fig_name] = fig[fig_name].add_subplot(121)
+                    AX2[fig_name] = fig[fig_name].add_subplot(122)
+                ax1 = AX1[fig_name]
+                ax2 = AX2[fig_name]
+                label = prune_mode
+                x = np.arange(len(y))
+                ax1.plot(x, y, color=color_dict[label], linestyle=linestyle_dict[label], label=label)
+                ax1.set_yscale(y_scale)
+                ax1.legend(loc='upper left', fontsize=fontsize['legend'])
+                ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
+                ax1.set_ylabel(y_name, fontsize=fontsize['label'])
+                ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                z = cr
+                ax2.plot(x, z, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
+                         label=label)
+                ax2.legend(loc='upper left', fontsize=fontsize['legend'])
+                ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
+                ax2.set_ylabel('Compression Ratio (CR)', fontsize=fontsize['label'])
+                ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax2.yaxis.set_label_position("right")
+                ax2.yaxis.tick_right()
+        for fig_name in fig:
+            fig[fig_name] = plt.figure(fig_name)
+            AX1[fig_name].grid(linestyle='--', linewidth='0.5')
+            AX2[fig_name].grid(linestyle='--', linewidth='0.5')
+            control = fig_name.split('_')
+            dir_path = os.path.join(vis_path, y_name, 'prune', *control[:-1])
+            fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+            makedir_exist_ok(dir_path)
+            plt.savefig(fig_path, dpi=500, bbox_inches='tight', pad_inches=0)
+            plt.close(fig_name)
+    return
+
+
 def make_y(input, mode):
     if mode == 'neuron':
         y = []
@@ -533,7 +621,6 @@ def make_y_figure(y, y_name):
     if y_name in ['SI']:
         y = y[:-1]
     elif y_name in ['SIe']:
-        # y = np.maximum(-np.diff(y), 0)
         y = -np.diff(y)
     else:
         raise ValueError('Not valid pivot metric name')
