@@ -30,6 +30,7 @@ def make_controls(script_name, init_seeds, world_size, num_experiments, resume_m
 
 def main():
     run = args['run']
+    init_gpu = args['init_gpu']
     num_gpus = args['num_gpus']
     world_size = args['world_size']
     round = args['round']
@@ -82,8 +83,7 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_student.py'.format(run)]]
@@ -95,8 +95,7 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'si':
         script_name = [['{}_student.py'.format(run)]]
