@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import init_param, loss_fn, normalize
+from .utils import init_param, loss_fn
 from config import cfg
 
 
@@ -88,7 +88,7 @@ class WideResNet(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = normalize(input['data'])
+        x = input['data']
         x = self.f(x)
         output['target'] = x
         if 'target' in input:

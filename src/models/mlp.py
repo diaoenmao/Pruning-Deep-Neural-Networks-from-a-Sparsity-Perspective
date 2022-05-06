@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from config import cfg
-from .utils import init_param, loss_fn, normalize
+from .utils import init_param, loss_fn
 
 
 class MLP(nn.Module):
@@ -29,8 +29,8 @@ class MLP(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = normalize(input['data'])
-        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+        x = input['data']
+        if x.dim() > 2:
             x = x.reshape(x.size(0), -1)
         x = self.f(x)
         output['target'] = x

@@ -54,3 +54,15 @@ python make.py --mode si-q --model mlp --data CIFAR10 --run test --round 12 --sp
 
 python make.py --mode si-eta --model mlp --data CIFAR10 --run train --round 12 --split_round 1
 python make.py --mode si-eta --model mlp --data CIFAR10 --run test --round 12 --split_round 1
+
+# CNN
+python make.py --mode init --model cnn --data CIFAR10 --run make --round 12 --split_round 1
+
+python make.py --mode teacher --model cnn --data CIFAR10 --run train --round 12 --split_round 1
+python make.py --mode teacher --model cnn --data CIFAR10 --run test --round 12 --split_round 1
+
+# ResNet
+python make.py --mode init --model resnet18 --data CIFAR10 --run make --round 12 --split_round 1
+
+python make.py --mode teacher --model resnet18 --data CIFAR10 --run train --round 12 --split_round 1
+python make.py --mode teacher --model resnet18 --data CIFAR10 --run test --round 12 --split_round 1

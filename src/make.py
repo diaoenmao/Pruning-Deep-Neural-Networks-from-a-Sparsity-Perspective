@@ -3,6 +3,7 @@ import itertools
 
 parser = argparse.ArgumentParser(description='config')
 parser.add_argument('--run', default='train', type=str)
+parser.add_argument('--init_gpu', default=0, type=int)
 parser.add_argument('--num_gpus', default=4, type=int)
 parser.add_argument('--world_size', default=1, type=int)
 parser.add_argument('--init_seed', default=0, type=int)
@@ -40,7 +41,8 @@ def main():
     data = args['data']
     model = args['model']
     split_round = args['split_round']
-    gpu_ids = [','.join(str(i) for i in list(range(x, x + world_size))) for x in list(range(0, num_gpus, world_size))]
+    gpu_ids = [','.join(str(i) for i in list(range(x, x + world_size))) for x in
+               list(range(init_gpu, init_gpu + num_gpus, world_size))]
     init_seeds = [list(range(init_seed, init_seed + num_experiments, experiment_step))]
     world_size = [[world_size]]
     num_experiments = [[experiment_step]]

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from config import cfg
-from .utils import init_param, loss_fn, normalize
+from .utils import init_param, loss_fn
 
 
 class CNN(nn.Module):
@@ -28,7 +28,7 @@ class CNN(nn.Module):
 
     def forward(self, input):
         output = {}
-        x = normalize(input['data'])
+        x = input['data']
         x = self.f(x)
         output['target'] = x
         if 'target' in input:
@@ -39,7 +39,7 @@ class CNN(nn.Module):
 def cnn():
     data_shape = cfg['data_shape']
     target_size = cfg['target_size']
-    hidden_size = cfg['conv']['hidden_size']
-    model = Conv(data_shape, hidden_size, target_size)
+    hidden_size = cfg['cnn']['hidden_size']
+    model = CNN(data_shape, hidden_size, target_size)
     model.apply(init_param)
     return model

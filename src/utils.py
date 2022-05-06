@@ -141,7 +141,8 @@ def process_control():
     cfg[model_name]['nesterov'] = True
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
     if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        cfg[model_name]['num_epochs'] = 100
+        num_epochs = {'mlp': 100, 'cnn': 200, 'resnet18': 200}
+        cfg[model_name]['num_epochs'] = num_epochs[model_name]
         cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
     else:
         raise ValueError('Not valid data name')

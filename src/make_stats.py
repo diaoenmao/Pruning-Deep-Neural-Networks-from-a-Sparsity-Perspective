@@ -31,7 +31,7 @@ if __name__ == "__main__":
             dataset = fetch_dataset(cfg['data_name'])
             process_dataset(dataset)
             dataset['train'].transform = datasets.Compose([transforms.ToTensor()])
-            data_loader = make_data_loader(dataset, 'teacher')
+            data_loader = make_data_loader(dataset, cfg['model_name'])
             stats = Stats(dim=dim)
             for i, input in enumerate(data_loader['train']):
                 input = collate(input)
