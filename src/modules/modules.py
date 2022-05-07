@@ -45,7 +45,8 @@ class SparsityIndex:
                 si_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
+                        param = param.view(param.size(0), -1)
                         si_i[name] = self.sparsity_index(param, self.q[i], -1)
                 si.append(si_i)
         elif mode == 'layer':
@@ -54,7 +55,7 @@ class SparsityIndex:
                 si_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         si_i[name] = self.sparsity_index(param.view(-1), self.q[i], -1)
                 si.append(si_i)
         elif mode == 'global':
@@ -63,7 +64,7 @@ class SparsityIndex:
                 param_all = []
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         param_all.append(param.view(-1))
                 param_all = torch.cat(param_all, dim=0)
                 si_i = self.sparsity_index(param_all, self.q[i], -1)
@@ -81,7 +82,8 @@ class SparsityIndex:
                 si_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
+                        param = param.view(param.size(0), -1)
                         si_i[name] = self.sparsity_index_excluded(param, mask[name], self.q[i], -1)
                 si.append(si_i)
         elif mode == 'layer':
@@ -90,7 +92,7 @@ class SparsityIndex:
                 si_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         si_i[name] = self.sparsity_index_excluded(param.view(-1), mask[name].view(-1), self.q[i], -1)
                 si.append(si_i)
         elif mode == 'global':
@@ -100,7 +102,7 @@ class SparsityIndex:
                 mask_all = []
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         param_all.append(param.view(-1))
                         mask_all.append(mask[name].view(-1))
                 param_all = torch.cat(param_all, dim=0)
@@ -130,7 +132,8 @@ class Norm:
                 norm_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
+                        param = param.view(param.size(0), -1)
                         norm_i[name] = torch.linalg.norm(param, self.q[i], dim=-1)
                 norm.append(norm_i)
         elif mode == 'layer':
@@ -139,7 +142,7 @@ class Norm:
                 norm_i = OrderedDict()
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         norm_i[name] = torch.linalg.norm(param.view(-1), self.q[i], dim=-1)
                 norm.append(norm_i)
         elif mode == 'global':
@@ -148,7 +151,7 @@ class Norm:
                 param_all = []
                 for name, param in model.state_dict().items():
                     parameter_type = name.split('.')[-1]
-                    if 'weight' in parameter_type:
+                    if 'weight' in parameter_type and param.dim() > 1:
                         param_all.append(param.view(-1))
                 param_all = torch.cat(param_all, dim=0)
                 norm_i = torch.linalg.norm(param_all, self.q[i], dim=-1)
@@ -169,7 +172,7 @@ class Compression:
         mask = OrderedDict()
         for name, param in model_state_dict.items():
             parameter_type = name.split('.')[-1]
-            if 'weight' in parameter_type:
+            if 'weight' in parameter_type and param.dim() > 1:
                 mask[name] = param.new_ones(param.size(), dtype=torch.bool)
         return mask
 
@@ -183,24 +186,25 @@ class Compression:
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
-                if 'weight' in parameter_type:
+                if 'weight' in parameter_type and param.dim() > 1:
                     if 'si' in self.prune_ratio:
                         prune_ratio_list = self.prune_ratio.split('-')
                         q, eta_m = float(prune_ratio_list[1]), float(prune_ratio_list[2])
                         q_idx = cfg['si_q'].index(q)
                         mask = self.mask[-1][name]
                         sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
-                        d = mask.float().sum(-1).to(sie_i.device)
+                        d = mask.float().sum(dim=list(range(1, param.dim()))).to(sie_i.device)
                         m = self.make_bound(sie_i, d, q, eta_m)
                         d_m = d.long() - m
-                        pivot_value = torch.sort(param.data.abs(), dim=-1)[0][
-                            torch.arange(param.size(0)), d_m].view(-1, 1)
+                        pivot_value = torch.sort(param.data.abs().view(param.size(0), -1), dim=1)[0][
+                            torch.arange(param.size(0)), d_m]
+                        pivot_value = pivot_value.view(-1, *[1 for _ in range(param.dim()-1)])
                     else:
                         mask = self.mask[-1][name]
                         masked_param = param.clone().abs()
                         prune_ratio = float(self.prune_ratio)
                         masked_param[~mask] = float('nan')
-                        pivot_value = torch.nanquantile(masked_param, prune_ratio, dim=-1, keepdim=True)
+                        pivot_value = torch.nanquantile(masked_param, prune_ratio, dim=1, keepdim=True)
                     pivot_mask = (param.data.abs() <= pivot_value).to('cpu')
                     new_mask[name] = torch.where(pivot_mask, False, mask)
                     param.data = torch.where(new_mask[name].to(param.device), param.data,
@@ -209,7 +213,7 @@ class Compression:
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
-                if 'weight' in parameter_type:
+                if 'weight' in parameter_type and param.dim() > 1:
                     if 'si' in self.prune_ratio:
                         prune_ratio_list = self.prune_ratio.split('-')
                         q, eta_m = float(prune_ratio_list[1]), float(prune_ratio_list[2])
@@ -235,7 +239,7 @@ class Compression:
             pivot_mask = []
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
-                if 'weight' in parameter_type:
+                if 'weight' in parameter_type and param.dim() > 1:
                     mask = self.mask[-1][name]
                     masked_param = param[mask]
                     pivot_param_i = masked_param.abs()
@@ -253,13 +257,16 @@ class Compression:
                 m = self.make_bound(sie_i, d, q, eta_m)
                 d_m = d.long() - m
                 pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][d_m]
+                pivot_value_2 = torch.sort(pivot_param.data.abs().view(-1))[0][m]
+                print(pivot_param.data.abs().view(-1).size(), d, d_m, m, m.float()/d.float())
+                print(pivot_value, pivot_value_2)
             else:
                 prune_ratio = float(self.prune_ratio)
                 pivot_value = torch.quantile(pivot_param, prune_ratio)
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
-                if 'weight' in parameter_type:
+                if 'weight' in parameter_type and param.dim() > 1:
                     mask = self.mask[-1][name]
                     pivot_mask = (param.data.abs() < pivot_value).to('cpu')
                     new_mask[name] = torch.where(pivot_mask, False, mask)
@@ -273,7 +280,7 @@ class Compression:
     def init(self, model):
         for name, param in model.named_parameters():
             parameter_type = name.split('.')[-1]
-            if 'weight' in parameter_type:
+            if 'weight' in parameter_type and param.dim() > 1:
                 mask = self.mask[-1][name]
                 param.data = torch.where(mask, self.init_model_state_dict[name],
                                          torch.tensor(0, dtype=torch.float)).to(param.device)
@@ -284,7 +291,7 @@ class Compression:
     def freeze_grad(self, model):
         for name, param in model.named_parameters():
             parameter_type = name.split('.')[-1]
-            if 'weight' in parameter_type:
+            if 'weight' in parameter_type and param.dim() > 1:
                 mask = self.mask[-1][name]
                 param.grad.data = torch.where(mask.to(param.device), param.grad.data,
                                               torch.tensor(0, dtype=torch.float, device=param.device))
