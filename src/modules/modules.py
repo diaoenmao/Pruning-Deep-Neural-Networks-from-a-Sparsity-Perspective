@@ -195,9 +195,8 @@ class Compression:
                         sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
                         d = mask.float().sum(dim=list(range(1, param.dim()))).to(sie_i.device)
                         m = self.make_bound(sie_i, d, q, eta_m)
-                        d_m = d.long() - m
                         pivot_value = torch.sort(param.data.abs().view(param.size(0), -1), dim=1)[0][
-                            torch.arange(param.size(0)), d_m]
+                            torch.arange(param.size(0)), m]
                         pivot_value = pivot_value.view(-1, *[1 for _ in range(param.dim()-1)])
                     else:
                         mask = self.mask[-1][name]
@@ -222,8 +221,7 @@ class Compression:
                         sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
                         d = mask.float().sum().to(sie_i.device)
                         m = self.make_bound(sie_i, d, q, eta_m)
-                        d_m = d.long() - m
-                        pivot_value = torch.sort(param.data.abs().view(-1))[0][d_m]
+                        pivot_value = torch.sort(param.data.abs().view(-1))[0][m]
                     else:
                         mask = self.mask[-1][name]
                         masked_param = param[mask]
@@ -255,11 +253,7 @@ class Compression:
                 sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx]
                 d = mask.float().sum().to(sie_i.device)
                 m = self.make_bound(sie_i, d, q, eta_m)
-                d_m = d.long() - m
-                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][d_m]
-                pivot_value_2 = torch.sort(pivot_param.data.abs().view(-1))[0][m]
-                print(pivot_param.data.abs().view(-1).size(), d, d_m, m, m.float()/d.float())
-                print(pivot_value, pivot_value_2)
+                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][m]
             else:
                 prune_ratio = float(self.prune_ratio)
                 pivot_value = torch.quantile(pivot_param, prune_ratio)

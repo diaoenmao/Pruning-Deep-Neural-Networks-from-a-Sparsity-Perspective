@@ -1,3 +1,4 @@
+# MLP
 python make.py --mode init --model mlp --data MNIST --run make --round 12 --split_round 1
 python make.py --mode init --model mlp --data CIFAR10 --run make --round 12 --split_round 1
 
@@ -49,6 +50,7 @@ python make.py --mode si --model mlp --data CIFAR10 --run test --round 12 --spli
 python make.py --mode si --model mlp --data SVHN --run train --round 12 --split_round 1
 python make.py --mode si --model mlp --data SVHN --run test --round 12 --split_round 1
 
+# Ablation
 python make.py --mode si-q --model mlp --data MNIST --run train --round 12 --split_round 1
 python make.py --mode si-q --model mlp --data MNIST --run test --round 12 --split_round 1
 

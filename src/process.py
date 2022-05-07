@@ -96,10 +96,10 @@ def main():
     extract_processed_result(extracted_processed_result_history, processed_result_history, [])
     df_exp = make_df_result(extracted_processed_result_exp, 'exp')
     df_history = make_df_result(extracted_processed_result_history, 'history')
-    # make_vis_by_layer(df_exp, 'SI')
-    make_vis_by_prune(df_exp, 'Loss')
-    make_vis_by_prune(df_exp, 'Loss-Teacher')
-    make_vis_by_prune(df_exp, 'Accuracy')
+    make_vis_by_layer(df_exp, 'SI')
+    # make_vis_by_prune(df_exp, 'Loss')
+    # make_vis_by_prune(df_exp, 'Loss-Teacher')
+    # make_vis_by_prune(df_exp, 'Accuracy')
     return
 
 
@@ -234,7 +234,7 @@ def make_df_result(extracted_processed_result, mode_name):
 
 
 def make_vis_by_layer(df, y_name):
-    mode = ['teacher', 'once', 'lt']
+    mode = ['teacher', 'once', 'lt', 'si']
     data_all = [['MNIST'], ['FashionMNIST'], ['CIFAR10'], ['SVHN']]
     for i in range(len(data_all)):
         data = data_all[i]
@@ -315,7 +315,6 @@ def make_vis_by_layer(df, y_name):
                     ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                     ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                     ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                    # ax2.legend(loc=label_loc_dict['CR'], fontsize=fontsize['legend'])
         for fig_name in fig:
             fig[fig_name] = plt.figure(fig_name)
             AX1[fig_name].grid(linestyle='--', linewidth='0.5')
@@ -344,10 +343,9 @@ def make_vis_by_prune(df, y_name):
                           'CR': 'upper right', 'Sie': 'upper left'}
         marker_dict = {'once': 'o', 'lt': 's', 'si': 'p'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (15, 4)
+        figsize = (10, 4)
         capsize = 3
         capthick = 3
-        q = 0.5
         controls = []
         for mode_i in mode:
             for data_i in data:
@@ -355,7 +353,7 @@ def make_vis_by_prune(df, y_name):
         for i in range(len(controls)):
             controls[i] = controls[i][1]
         fig = {}
-        AX1, AX2, AX3 = {}, {}, {}
+        AX1, AX2 = {}, {}
         for df_name in df:
             df_name_list = df_name.split('_')
             df_name_control_name = '_'.join(df_name_list[:-2])
@@ -367,35 +365,23 @@ def make_vis_by_prune(df, y_name):
                 df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
                 df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
                 df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-{}'.format(q), stats])
-                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-{}'.format(q), 'std'])
                 y = df[df_name_y].iloc[0].to_numpy()
                 cr = df[df_name_cr].iloc[0].to_numpy()
-                sie = df[df_name_sie].iloc[0].to_numpy()
                 y_std = df[df_name_y_std].iloc[0].to_numpy()
                 cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
                 teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
-                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-{}'.format(q), *df_name_list[-1:]])
                 teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
-                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-{}'.format(q), 'std'])
                 teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
-                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
                 teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
                 y = np.concatenate([teacher_y, y], axis=0)
-                sie = np.concatenate([teacher_sie, sie], axis=0)
                 y_std = np.concatenate([teacher_y_std, y_std], axis=0)
-                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
                 fig_name = '_'.join([*df_name_list[:3], type, metric_name])
                 fig[fig_name] = plt.figure(fig_name, figsize=figsize)
                 if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(131)
-                    AX2[fig_name] = fig[fig_name].add_subplot(132)
-                    AX3[fig_name] = fig[fig_name].add_subplot(133)
+                    AX1[fig_name] = fig[fig_name].add_subplot(121)
+                    AX2[fig_name] = fig[fig_name].add_subplot(122)
                 ax1 = AX1[fig_name]
                 ax2 = AX2[fig_name]
-                ax3 = AX3[fig_name]
                 label = prune_mode
                 x = np.arange(len(y))
                 ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -414,21 +400,10 @@ def make_vis_by_prune(df, y_name):
                 ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                 ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                # ax2.legend(loc=label_loc_dict['CR'], fontsize=fontsize['legend'])
-                z = sie
-                z_std = sie_std
-                ax3.errorbar(x, z, yerr=z_std, color=z_color_dict[label], linestyle=z_linestyle_dict[label],
-                             label=label_dict[label], marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
-                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                # ax3.legend(loc=label_loc_dict['Sie'], fontsize=fontsize['legend'])
         for fig_name in fig:
             fig[fig_name] = plt.figure(fig_name)
             AX1[fig_name].grid(linestyle='--', linewidth='0.5')
             AX2[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
             fig[fig_name].tight_layout()
             control = fig_name.split('_')
             dir_path = os.path.join(vis_path, y_name, 'prune', *control[:-1])
@@ -480,28 +455,6 @@ def make_cr(input, mode):
     else:
         raise ValueError('Not valid mode')
     return cr
-
-
-def make_y_figure(y, y_name):
-    if y_name in ['SI']:
-        y = y[:-1]
-    elif y_name in ['SIe']:
-        y = -np.diff(y)
-    else:
-        raise ValueError('Not valid pivot metric name')
-    return y
-
-
-def make_z_figure(pivot_metric, pivot_metric_name):
-    if pivot_metric_name in ['Accuracy']:
-        z = (pivot_metric[0] - pivot_metric[1:]) / pivot_metric[0]
-    elif pivot_metric_name in ['Loss']:
-        z = (pivot_metric[1:] - pivot_metric[0]) / pivot_metric[0]
-    elif pivot_metric_name in ['Loss-Teacher']:
-        z = (pivot_metric[1:] - pivot_metric[0])
-    else:
-        raise ValueError('Not valid pivot metric name')
-    return z
 
 
 if __name__ == '__main__':
