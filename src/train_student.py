@@ -76,7 +76,8 @@ def runExperiment():
             else:
                 raise ValueError('Not valid prune mode')
             model.load_state_dict(result['model_state_dict'])
-            sparsity_index.make_sparsity_index(model)
+            if cfg['prune_mode'][0] in ['si']:
+                sparsity_index.make_sparsity_index(model, compression.mask[-1])
             compression.prune(model, sparsity_index)
             compression.init(model)
             optimizer = make_optimizer(model, cfg['model_name'])

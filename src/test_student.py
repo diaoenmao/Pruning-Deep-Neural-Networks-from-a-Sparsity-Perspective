@@ -8,7 +8,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, resume, collate
 from logger import make_logger
-from modules import SparsityIndex, Norm
+from modules import SparsityIndex, Norm, Compression
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -53,7 +53,10 @@ def runExperiment():
         if result is not None:
             last_epoch = result['epoch']
             model.load_state_dict(result['model_state_dict'])
-            compression = result['compression']
+            if 'compression' in result:
+                compression = result['compression']
+            else:
+                compression = Compression(cfg['prune_ratio'], cfg['prune_mode'])
             test(data_loader['test'], model, teacher_model, compression, sparsity_index, norm, metric, test_logger,
                  iter, last_epoch)
         test_logger.reset()
@@ -85,7 +88,8 @@ def test(data_loader, model, teacher_model, compression, sparsity_index, norm, m
                          'Test Iter: {}/{}'.format(iter, cfg['prune_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    sparsity_index.make_sparsity_index(model, compression.mask[iter - 1])
+    sparsity_index.make_sparsity_index(model, compression.mask[-1])
+    print(sparsity_index.sie['global'][-1][4])
     norm.make_norm(model)
     logger.safe(False)
     return
