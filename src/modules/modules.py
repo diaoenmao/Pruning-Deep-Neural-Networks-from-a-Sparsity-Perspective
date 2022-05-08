@@ -254,9 +254,15 @@ class Compression:
                 mask = pivot_mask
                 sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx]
                 d = mask.float().sum().to(sie_i.device)
-                m = self.make_bound(sie_i, d, q, eta_m)
-                d_m = d.long() - m
+                # m = self.make_bound(sie_i, d, q, eta_m)
+                m = self.make_bound(sie_i, d, q, 0)
+                c = eta_m
+                prune_ratio = min(c*(1 - m / d), 0.9)
+                d_m = torch.floor(d * prune_ratio).long()
+                # d_m = d.long() - m
+                print('c: {}'.format(c), 'sie: {}'.format(sie_i), 'd: {}'.format(d), 'd_m: {}'.format(d_m), 'prune_ratio: {}'.format(prune_ratio))
                 pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][d_m]
+                # pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][m]
             else:
                 prune_ratio = float(self.prune_ratio)
                 pivot_value = torch.quantile(pivot_param.data.abs(), prune_ratio)

@@ -89,7 +89,7 @@ def test(data_loader, model, teacher_model, compression, sparsity_index, norm, m
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model, compression.mask[-1])
-    print(sparsity_index.sie['global'][-1][4])
+    # print(sparsity_index.sie['global'][-1][4])
     norm.make_norm(model)
     logger.safe(False)
     return

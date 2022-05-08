@@ -70,6 +70,7 @@ def test(data_loader, model, sparsity_index, norm, metric, logger, epoch):
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
     sparsity_index.make_sparsity_index(model)
+    # print(sparsity_index.si['global'][-1][4])
     norm.make_norm(model)
     logger.safe(False)
     return
