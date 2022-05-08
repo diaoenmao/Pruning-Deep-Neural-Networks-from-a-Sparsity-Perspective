@@ -189,17 +189,6 @@ def extract_result(control, model_tag, processed_result_exp, processed_result_hi
                         cr_m = make_cr(base_result['compression'].mask[m], k)
                         cr.extend(cr_m)
                     processed_result_exp[metric_name]['exp'][exp_idx] = cr
-                for k in mode:
-                    metric_name = 'MD-{}'.format(k)
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    d = []
-                    L = None
-                    for m in range(len(base_result['compression'].mask)):
-                        d_m, L = make_d(base_result['compression'].mask[m], k)
-                        d.extend(d_m)
-                    md = make_md(d, L)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = md
             for k in base_result['logger']['train'].history:
                 metric_name = k.split('/')[1]
                 if metric_name not in processed_result_history:
@@ -382,7 +371,7 @@ def make_vis_by_prune(df, y_name):
                           'CR': 'upper right', 'Sie': 'upper left'}
         marker_dict = {'once': 'o', 'lt': 's', 'si': 'p'}
         fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (20, 4)
+        figsize = (15, 4)
         capsize = 3
         capthick = 3
         controls = []
@@ -392,7 +381,7 @@ def make_vis_by_prune(df, y_name):
         for i in range(len(controls)):
             controls[i] = controls[i][1]
         fig = {}
-        AX1, AX2, AX3, AX4 = {}, {}, {}, {}
+        AX1, AX2, AX3 = {}, {}, {}
         for df_name in df:
             df_name_list = df_name.split('_')
             df_name_control_name = '_'.join(df_name_list[:-2])
@@ -404,16 +393,12 @@ def make_vis_by_prune(df, y_name):
                 df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
                 df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
                 df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                df_name_md = '_'.join([*df_name_list[:-2], 'MD-global', stats])
-                df_name_md_std = '_'.join([*df_name_list[:-2], 'MD-global', 'std'])
                 df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
                 df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
                 y = df[df_name_y].iloc[0].to_numpy()
                 y_std = df[df_name_y_std].iloc[0].to_numpy()
                 cr = df[df_name_cr].iloc[0].to_numpy()
                 cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                md = df[df_name_md].iloc[0].to_numpy()
-                md_std = df[df_name_md_std].iloc[0].to_numpy()
                 sie = df[df_name_sie].iloc[0].to_numpy()
                 sie_std = df[df_name_sie_std].iloc[0].to_numpy()
                 teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
@@ -431,14 +416,12 @@ def make_vis_by_prune(df, y_name):
                 fig_name = '_'.join([*df_name_list[:3], type, metric_name])
                 fig[fig_name] = plt.figure(fig_name, figsize=figsize)
                 if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(141)
-                    AX2[fig_name] = fig[fig_name].add_subplot(142)
-                    AX3[fig_name] = fig[fig_name].add_subplot(143)
-                    AX4[fig_name] = fig[fig_name].add_subplot(144)
+                    AX1[fig_name] = fig[fig_name].add_subplot(131)
+                    AX2[fig_name] = fig[fig_name].add_subplot(132)
+                    AX3[fig_name] = fig[fig_name].add_subplot(133)
                 ax1 = AX1[fig_name]
                 ax2 = AX2[fig_name]
                 ax3 = AX3[fig_name]
-                ax4 = AX4[fig_name]
                 label = prune_mode
                 x = np.arange(len(y))
                 ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -447,7 +430,6 @@ def make_vis_by_prune(df, y_name):
                 ax1.set_ylabel(y_name, fontsize=fontsize['label'])
                 ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax1.legend(loc=label_loc_dict[y_name], fontsize=fontsize['legend'])
                 z = cr
                 z_std = cr_std
                 ax2.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -456,29 +438,20 @@ def make_vis_by_prune(df, y_name):
                 ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                 ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = md
-                z_std = md_std
-                ax3.errorbar(np.arange(1, len(z) + 1), z, yerr=z_std, color=color_dict[label],
-                             linestyle=linestyle_dict[label], label=label_dict[label], marker=marker_dict[label],
-                             capsize=capsize, capthick=capthick)
-                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax3.set_ylabel('$\\frac{m}{d}$', fontsize=fontsize['label'])
-                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax2.legend(loc=label_loc_dict['CR'], fontsize=fontsize['legend'])
                 z = sie
                 z_std = sie_std
-                ax4.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
+                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
                              label=label_dict[label], marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax4.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax4.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
-                ax4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
+                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
+                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
         for fig_name in fig:
             fig[fig_name] = plt.figure(fig_name)
             AX1[fig_name].grid(linestyle='--', linewidth='0.5')
             AX2[fig_name].grid(linestyle='--', linewidth='0.5')
             AX3[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX4[fig_name].grid(linestyle='--', linewidth='0.5')
             fig[fig_name].tight_layout()
             control = fig_name.split('_')
             dir_path = os.path.join(vis_path, y_name, 'prune', *control[:-1])
@@ -510,7 +483,7 @@ def make_vis_by_si_q(df, y_name):
         for i in range(len(controls)):
             controls[i] = controls[i][1]
         fig = {}
-        AX1, AX2 = {}, {}
+        AX1, AX2, AX3 = {}, {}, {}
         for df_name in df:
             df_name_list = df_name.split('_')
             df_name_control_name = '_'.join(df_name_list[:-2])
@@ -523,23 +496,33 @@ def make_vis_by_si_q(df, y_name):
                 df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
                 df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
                 df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
+                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
+                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
                 y = df[df_name_y].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
                 y_std = df[df_name_y_std].iloc[0].to_numpy()
+                cr = df[df_name_cr].iloc[0].to_numpy()
                 cr_std = df[df_name_cr_std].iloc[0].to_numpy()
+                sie = df[df_name_sie].iloc[0].to_numpy()
+                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
                 teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
                 teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
                 teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
                 teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
+                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
+                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
                 y = np.concatenate([teacher_y, y], axis=0)
                 y_std = np.concatenate([teacher_y_std, y_std], axis=0)
+                sie = np.concatenate([teacher_sie, sie], axis=0)
+                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
                 fig_name = '_'.join([*df_name_list[:3], type, metric_name])
                 fig[fig_name] = plt.figure(fig_name, figsize=figsize)
                 if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(121)
-                    AX2[fig_name] = fig[fig_name].add_subplot(122)
+                    AX1[fig_name] = fig[fig_name].add_subplot(131)
+                    AX2[fig_name] = fig[fig_name].add_subplot(132)
+                    AX3[fig_name] = fig[fig_name].add_subplot(133)
                 ax1 = AX1[fig_name]
                 ax2 = AX2[fig_name]
+                ax3 = AX3[fig_name]
                 label = q
                 x = np.arange(len(y))
                 ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -558,10 +541,20 @@ def make_vis_by_si_q(df, y_name):
                 ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                 ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                z = sie
+                z_std = sie_std
+                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
+                             label='$q={}$'.format(label), marker=marker_dict[label], capsize=capsize,
+                             capthick=capthick)
+                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
+                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
+                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
         for fig_name in fig:
             fig[fig_name] = plt.figure(fig_name)
             AX1[fig_name].grid(linestyle='--', linewidth='0.5')
             AX2[fig_name].grid(linestyle='--', linewidth='0.5')
+            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
             handles, labels = AX2[fig_name].get_legend_handles_labels()
             if len(handles) > 1:
                 AX2[fig_name].legend([handles[1], handles[2], handles[0], handles[3], handles[4]],
@@ -598,7 +591,7 @@ def make_vis_by_si_eta(df, y_name):
         for i in range(len(controls)):
             controls[i] = controls[i][1]
         fig = {}
-        AX1, AX2 = {}, {}
+        AX1, AX2, AX3 = {}, {}, {}
         for df_name in df:
             df_name_list = df_name.split('_')
             df_name_control_name = '_'.join(df_name_list[:-2])
@@ -611,21 +604,30 @@ def make_vis_by_si_eta(df, y_name):
                 df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
                 df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
                 df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
+                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
+                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
                 y = df[df_name_y].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
                 y_std = df[df_name_y_std].iloc[0].to_numpy()
+                cr = df[df_name_cr].iloc[0].to_numpy()
                 cr_std = df[df_name_cr_std].iloc[0].to_numpy()
+                sie = df[df_name_sie].iloc[0].to_numpy()
+                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
                 teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
                 teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
                 teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
                 teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
+                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
+                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
                 y = np.concatenate([teacher_y, y], axis=0)
                 y_std = np.concatenate([teacher_y_std, y_std], axis=0)
+                sie = np.concatenate([teacher_sie, sie], axis=0)
+                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
                 fig_name = '_'.join([*df_name_list[:3], type, metric_name])
                 fig[fig_name] = plt.figure(fig_name, figsize=figsize)
                 if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(121)
-                    AX2[fig_name] = fig[fig_name].add_subplot(122)
+                    AX1[fig_name] = fig[fig_name].add_subplot(131)
+                    AX2[fig_name] = fig[fig_name].add_subplot(132)
+                    AX3[fig_name] = fig[fig_name].add_subplot(133)
                 ax1 = AX1[fig_name]
                 ax2 = AX2[fig_name]
                 label = eta_m
@@ -646,10 +648,20 @@ def make_vis_by_si_eta(df, y_name):
                 ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                 ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+                z = sie
+                z_std = sie_std
+                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
+                             label='$\eta_m={}$'.format(label), marker=marker_dict[label], capsize=capsize,
+                             capthick=capthick)
+                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
+                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
+                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
         for fig_name in fig:
             fig[fig_name] = plt.figure(fig_name)
             AX1[fig_name].grid(linestyle='--', linewidth='0.5')
             AX2[fig_name].grid(linestyle='--', linewidth='0.5')
+            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
             handles, labels = AX2[fig_name].get_legend_handles_labels()
             if len(handles) > 1:
                 AX2[fig_name].legend([handles[1], handles[2], handles[0], handles[3], handles[4]],
@@ -706,45 +718,6 @@ def make_cr(input, mode):
     else:
         raise ValueError('Not valid mode')
     return cr
-
-
-def make_d(input, mode):
-    if mode == 'neuron':
-        d = []
-        L = 0
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            d_i = mask_i.sum().item()
-            d.append(d_i)
-            L += 1
-    elif mode == 'layer':
-        d = []
-        L = 0
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            d_i = mask_i.sum().item()
-            d.append(d_i)
-            L += 1
-    elif mode == 'global':
-        d = []
-        param_all = []
-        for name, param in input.items():
-            param_all.append(param.view(-1))
-        param_all = torch.cat(param_all, dim=0)
-        mask = param_all.view(-1).float()
-        d.append(mask.sum().item())
-        L = 1
-    else:
-        raise ValueError('Not valid mode')
-    return d, L
-
-
-def make_md(d, L):
-    d = np.array(d).reshape(-1, L)
-    m = -np.diff(d, axis=0)
-    md = m / d[:-1, :]
-    md = md.reshape(-1).tolist()
-    return md
 
 
 if __name__ == '__main__':

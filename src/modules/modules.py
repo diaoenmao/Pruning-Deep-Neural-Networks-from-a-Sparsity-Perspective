@@ -256,8 +256,6 @@ class Compression:
                 d = mask.float().sum().to(sie_i.device)
                 m = self.make_bound(sie_i, d, q, eta_m)
                 d_m = d.long() - m
-                print('sie: {}'.format(sie_i), 'm: {}'.format(m), 'd: {}'.format(d),
-                      'm/d: {}'.format(m.float() / d.float()))
                 pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][d_m]
             else:
                 prune_ratio = float(self.prune_ratio)
