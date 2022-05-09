@@ -653,17 +653,17 @@ def make_vis_by_si_eta(df, y_name):
             if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
                     y_name in metric_name and stats == 'mean':
                 _, q, eta_m = df_name_list[-4].split('-')
-                prune_iters = df_name_list[-5]
-                num_layers = int(df_name_list[-6].split('-')[3]) + 1
+                # prune_iters = df_name_list[-5]
+                # num_layers = int(df_name_list[-6].split('-')[3]) + 1
                 prune_mode, type = df_name_list[-3].split('-')
                 df_name_y = df_name
                 df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
                 df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
                 df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                # df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
-                # df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
-                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', stats])
-                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', 'std'])
+                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
+                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
+                # df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', stats])
+                # df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', 'std'])
                 df_name_md = '_'.join([*df_name_list[:-2], 'MD-global', stats])
                 df_name_md_std = '_'.join([*df_name_list[:-2], 'MD-global', 'std'])
                 y = df[df_name_y].iloc[0].to_numpy()
@@ -678,10 +678,10 @@ def make_vis_by_si_eta(df, y_name):
                 teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
                 teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
                 teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                # teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-0.5', stats])
-                # teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-0.5', 'std'])
-                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', stats])
-                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', 'std'])
+                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-0.5', stats])
+                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-0.5', 'std'])
+                # teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', stats])
+                # teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', 'std'])
                 teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
                 teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
                 y = np.concatenate([teacher_y, y], axis=0)
@@ -690,8 +690,8 @@ def make_vis_by_si_eta(df, y_name):
                 sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
                 # sie = sie.reshape((int(prune_iters) + 1, -1)).mean(axis=-1)
                 # sie_std = sie_std.reshape((int(prune_iters) + 1, -1)).mean(axis=-1)
-                sie = sie.reshape((-1, num_layers)).mean(axis=-1)
-                sie_std = sie_std.reshape((-1, num_layers)).mean(axis=-1)
+                # sie = sie.reshape((-1, num_layers)).mean(axis=-1)
+                # sie_std = sie_std.reshape((-1, num_layers)).mean(axis=-1)
                 fig_name = '_'.join([*df_name_list[:3], type, metric_name])
                 fig[fig_name] = plt.figure(fig_name, figsize=figsize)
                 if fig_name not in AX1:

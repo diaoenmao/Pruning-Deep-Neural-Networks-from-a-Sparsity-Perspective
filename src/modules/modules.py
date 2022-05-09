@@ -232,9 +232,11 @@ class Compression:
                         sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx][name]
                         d = mask.float().sum().to(sie_i.device)
                         # m = self.make_bound(sie_i, d, q, eta_m)
-                        m = gamma ** (1 / (1 - q)) * self.make_bound(sie_i, d, q, 0)
-                        prune_ratio = min(eta_m * (1 - m / d), 0.9)
-                        prune_ratio[m > 1] = 0.
+                        m = gamma ** (1 / (1 - q)) * self.make_bound(sie_i, d, q, 0) / d
+                        if m > 1:
+                            prune_ratio = 0.
+                        else:
+                            prune_ratio = min(eta_m * (1 - m), 0.9)
                         d_m = torch.floor(d * prune_ratio).long()
                         # d_m = d.long() - m
                         pivot_value = torch.sort(pivot_param.view(-1))[0][d_m]
@@ -266,9 +268,11 @@ class Compression:
                 sie_i = sparsity_index.sie[self.prune_mode[1]][-1][q_idx]
                 d = mask.float().sum().to(sie_i.device)
                 # m = self.make_bound(sie_i, d, q, eta_m)
-                m = gamma ** (1 / (1 - q)) * self.make_bound(sie_i, d, q, 0)
-                prune_ratio = min(eta_m * (1 - m / d), 0.9)
-                prune_ratio[m > 1] = 0.
+                m = gamma ** (1 / (1 - q)) * self.make_bound(sie_i, d, q, 0) / d
+                if m > 1:
+                    prune_ratio = 0.
+                else:
+                    prune_ratio = min(eta_m * (1 - m), 0.9)
                 d_m = torch.floor(d * prune_ratio).long()
                 # x = {'d': d, 'bound': m, 'd_m': d_m, 'm': d - d_m, 'sie': sie_i, 'prune_ratio': prune_ratio}
                 # print(x)
