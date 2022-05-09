@@ -45,8 +45,8 @@ def make_control_list(mode, data, model):
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global']]]
         controls = make_controls(control_name)
     elif mode == 'lt':
         data_name = [data]
@@ -57,8 +57,8 @@ def make_control_list(mode, data, model):
                 model_name[i] = '-'.join(model_name[i])
         else:
             raise ValueError('Not valid model')
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global']]]
+        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global']]]
         controls = make_controls(control_name)
     elif mode == 'si':
         data_name = [data]
@@ -70,7 +70,7 @@ def make_control_list(mode, data, model):
         else:
             raise ValueError('Not valid model')
         # control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-neuron', 'si-layer', 'si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.5-5'], ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(control_name)
     elif mode == 'si-q':
         data_name = [data]
@@ -83,8 +83,8 @@ def make_control_list(mode, data, model):
             model_name = [model]
         # control_name = [[data_name, model_name, ['30'], ['si-0.2-0', 'si-0.4-0', 'si-0.6-0', 'si-0.8-0'],
         #                  ['si-neuron', 'si-layer', 'si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.2-0', 'si-0.4-0', 'si-0.6-0', 'si-0.8-0'],
-                         ['si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.2-5', 'si-0.4-5', 'si-0.6-5', 'si-0.8-5'],
+                         ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(control_name)
     elif mode == 'si-eta':
         data_name = [data]
@@ -99,8 +99,10 @@ def make_control_list(mode, data, model):
         #                  ['si-neuron', 'si-layer', 'si-global']]]
         # control_name = [[data_name, model_name, ['30'], ['si-0.5-0.01', 'si-0.5-0.1', 'si-0.5-1', 'si-0.5-10'],
         #                  ['si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-2', 'si-0.5-3', 'si-0.5-4', 'si-0.5-5'],
-                         ['si-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-2', 'si-0.5-3', 'si-0.5-4', 'si-0.5-5'],
+        #                  ['si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-3', 'si-0.5-7', 'si-0.5-9'],
+                         ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(control_name)
     else:
         raise ValueError('Not valid mode')
@@ -132,8 +134,8 @@ def main():
     # make_vis_by_layer(df_exp, 'SI')
     # make_vis_by_prune(df_exp, 'Loss')
     # make_vis_by_prune(df_exp, 'Loss-Teacher')
-    # make_vis_by_prune(df_exp, 'Accuracy')
-    # make_vis_by_si_q(df_exp, 'Accuracy')
+    make_vis_by_prune(df_exp, 'Accuracy')
+    make_vis_by_si_q(df_exp, 'Accuracy')
     make_vis_by_si_eta(df_exp, 'Accuracy')
     return
 
@@ -617,8 +619,8 @@ def make_vis_by_si_q(df, y_name):
 
 
 def make_vis_by_si_eta(df, y_name):
-    # mode = ['teacher', 'si', 'si-eta']
-    mode = ['teacher', 'si-eta']
+    mode = ['teacher', 'si', 'si-eta']
+    # mode = ['teacher', 'si-eta']
     data_all = [['MNIST'], ['CIFAR10']]
     for i in range(len(data_all)):
         data = data_all[i]
@@ -626,9 +628,9 @@ def make_vis_by_si_eta(df, y_name):
         # linestyle_dict = {'0': '-', '0.01': '--', '0.1': '-.', '1': ':', '10': (0, (1, 10))}
         # marker_dict = {'0': 'o', '0.01': 's', '0.1': 'p', '1': 'D', '10': 'H'}
 
-        color_dict = {'1': 'black', '2': 'red', '3': 'orange', '4': 'blue', '5': 'cyan'}
-        linestyle_dict = {'1': '-', '2': '--', '3': '-.', '4': ':', '5': (0, (1, 10))}
-        marker_dict = {'1': 'o', '2': 's', '3': 'p', '4': 'D', '5': 'H'}
+        color_dict = {'1': 'black', '3': 'red', '5': 'orange', '7': 'blue', '9': 'cyan'}
+        linestyle_dict = {'1': '-', '3': '--', '5': '-.', '7': ':', '9': (0, (1, 10))}
+        marker_dict = {'1': 'o', '3': 's', '5': 'p', '7': 'D', '9': 'H'}
 
         label_loc_dict = {'Accuracy': 'lower left', 'Loss': 'upper left', 'Loss-Teacher': 'upper left',
                           'CR': 'upper right', 'Sie': 'upper left'}
@@ -711,7 +713,6 @@ def make_vis_by_si_eta(df, y_name):
                 ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
                 ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
                 ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax2.legend(loc=label_loc_dict['CR'], fontsize=fontsize['legend'])
                 z = sie
                 z_std = sie_std
                 ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
@@ -738,6 +739,11 @@ def make_vis_by_si_eta(df, y_name):
             AX2[fig_name].grid(linestyle='--', linewidth='0.5')
             AX3[fig_name].grid(linestyle='--', linewidth='0.5')
             AX4[fig_name].grid(linestyle='--', linewidth='0.5')
+            handles, labels = AX2[fig_name].get_legend_handles_labels()
+            if len(handles) > 1:
+                AX2[fig_name].legend([handles[1], handles[2], handles[0], handles[3], handles[4]],
+                                     [labels[1], labels[2], labels[0], labels[3], labels[4]], loc=label_loc_dict['CR'],
+                                     fontsize=fontsize['legend'])
             fig[fig_name].tight_layout()
             control = fig_name.split('_')
             dir_path = os.path.join(vis_path, y_name, 'si_eta', *control[:-1])

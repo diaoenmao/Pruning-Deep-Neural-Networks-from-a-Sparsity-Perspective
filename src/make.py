@@ -107,7 +107,8 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-neuron', 'si-layer', 'si-global']]]
+        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-neuron', 'si-layer', 'si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.5-5'], ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'si-q':
         script_name = [['{}_student.py'.format(run)]]
@@ -119,7 +120,9 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        control_name = [[data_name, model_name, ['30'], ['si-0.2-0', 'si-0.4-0', 'si-0.6-0', 'si-0.8-0'],
+        # control_name = [[data_name, model_name, ['30'], ['si-0.2-0', 'si-0.4-0', 'si-0.6-0', 'si-0.8-0'],
+        #                  ['si-neuron', 'si-layer', 'si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.2-5', 'si-0.4-5', 'si-0.6-5', 'si-0.8-5'],
                          ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'si-eta':
@@ -132,7 +135,9 @@ def main():
                 model_name[i] = '-'.join(model_name[i])
         else:
             model_name = [model]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-0.01', 'si-0.5-0.1', 'si-0.5-1', 'si-0.5-10'],
+        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0.01', 'si-0.5-0.1', 'si-0.5-1', 'si-0.5-10'],
+        #                  ['si-neuron', 'si-layer', 'si-global']]]
+        control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-3', 'si-0.5-7', 'si-0.5-9'],
                          ['si-neuron', 'si-layer', 'si-global']]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     else:
