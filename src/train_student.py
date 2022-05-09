@@ -124,7 +124,7 @@ def train(data_loader, model, compression, optimizer, metric, logger, iter, epoc
                 seconds=round((cfg[cfg['model_name']]['num_epochs'] - epoch) * batch_time * len(data_loader)))) + \
                                 datetime.timedelta(seconds=round(batch_time * len(data_loader) *
                                                                  cfg[cfg['model_name']]['num_epochs'] *
-                                                                 (cfg['prune_iters'] - iter - 1)))
+                                                                 (cfg['prune_iters'] - iter)))
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
                              'Train Iter: {}/{}'.format(iter, cfg['prune_iters']),
