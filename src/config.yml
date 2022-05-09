@@ -2,7 +2,7 @@
 # control
 control:
   data_name: MNIST
-  model_name: mlp-128-1-1-relu
+  model_name: mlp-128-1-2-relu
   prune_iters: 30
   prune_ratio: si-0.5-0
   prune_mode: si-layer
