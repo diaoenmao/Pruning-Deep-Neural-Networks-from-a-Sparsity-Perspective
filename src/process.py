@@ -134,8 +134,8 @@ def main():
     # make_vis_by_layer(df_exp, 'SI')
     # make_vis_by_prune(df_exp, 'Loss')
     # make_vis_by_prune(df_exp, 'Loss-Teacher')
-    # make_vis_by_prune(df_exp, 'Accuracy')
-    # make_vis_by_si_q(df_exp, 'Accuracy')
+    make_vis_by_prune(df_exp, 'Accuracy')
+    make_vis_by_si_q(df_exp, 'Accuracy')
     make_vis_by_si_eta(df_exp, 'Accuracy')
     return
 
