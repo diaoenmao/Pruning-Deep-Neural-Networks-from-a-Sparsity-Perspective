@@ -4,8 +4,7 @@ control:
   data_name: MNIST
   model_name: mlp-128-1-2-relu
   prune_iters: 30
-  prune_ratio: si-0.5-0
-  prune_mode: si-layer
+  prune_mode: si-layer-1-0.5-0
 # experiment
 num_workers: 0
 init_seed: 0
