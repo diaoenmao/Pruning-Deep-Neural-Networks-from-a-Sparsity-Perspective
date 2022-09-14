@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from config import cfg
-from .utils import init_param, loss_fn
+from .utils import init_param, make_loss
 
 
 class MLP(nn.Module):
@@ -20,22 +20,29 @@ class MLP(nn.Module):
                 raise ValueError('Not valid activation')
             input_size = hidden_size
             hidden_size = int(hidden_size * scale_factor)
-        blocks.append(nn.Linear(input_size, target_size))
         self.blocks = nn.Sequential(*blocks)
+        self.linear = nn.Linear(input_size, target_size)
+
+    def feature(self, x):
+        x = x.reshape(x.size(0), -1)
+        x = self.blocks(x)
+        return x
+
+    def classify(self, x):
+        x = self.linear(x)
+        return x
 
     def f(self, x):
-        x = self.blocks(x)
+        x = self.feature(x)
+        x = self.classify(x)
         return x
 
     def forward(self, input):
         output = {}
         x = input['data']
-        if x.dim() > 2:
-            x = x.reshape(x.size(0), -1)
         x = self.f(x)
         output['target'] = x
-        if 'target' in input:
-            output['loss'] = loss_fn(output['target'], input['target'])
+        output['loss'] = make_loss(output, input)
         return output
 
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from config import cfg
-from .utils import init_param, loss_fn
+from .utils import init_param, make_loss
 
 
 class CNN(nn.Module):
@@ -22,9 +22,17 @@ class CNN(nn.Module):
         self.blocks = nn.Sequential(*blocks)
         self.linear = nn.Linear(hidden_size[-1], target_size)
 
-    def f(self, x):
+    def feature(self, x):
         x = self.blocks(x)
+        return x
+
+    def classify(self, x):
         x = self.linear(x)
+        return x
+
+    def f(self, x):
+        x = self.feature(x)
+        x = self.classify(x)
         return x
 
     def forward(self, input):
@@ -32,8 +40,7 @@ class CNN(nn.Module):
         x = input['data']
         x = self.f(x)
         output['target'] = x
-        if 'target' in input:
-            output['loss'] = loss_fn(output['target'], input['target'])
+        output['loss'] = make_loss(output, input)
         return output
 
 

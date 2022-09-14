@@ -33,13 +33,13 @@ def runExperiment():
     cfg['summary'] = {}
     cfg['summary']['batch_size'] = {'train': 2, 'test': 2}
     cfg['summary']['shuffle'] = {'train': False, 'test': False}
-    data_loader = make_data_loader(dataset, 'summary')
+    data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     summary = summarize(data_loader['train'], model)
     content, total = parse_summary(summary)
     print(content)
     save_result = total
-    save(save_result, './output/result/{}.pt'.format(cfg['control_name']))
+    save(save_result, os.path.join('output', 'result', '{}.pt'.format(cfg['control_name'])))
     return
 
 
@@ -175,8 +175,8 @@ def parse_summary(summary):
     content += 'Total Number of Parameters: {}\n'.format(total_num_param)
     content += 'Total Number of FLOPs: {}\n'.format(total_num_flops)
     content += 'Total Space (MB): {:.2f}\n'.format(total_space)
-    makedir_exist_ok('./output')
-    content_file = open('./output/summary.md', 'w')
+    makedir_exist_ok('output')
+    content_file = open(os.path.join('output', 'summary.md'), 'w')
     content_file.write(content)
     content_file.close()
     return content, total
@@ -198,7 +198,6 @@ def compute_flops(module, inp, out):
     else:
         print(f"[Flops]: {type(module).__name__} is not supported!")
         return 0
-
 
 
 def compute_Conv2d_flops(module, inp, out):

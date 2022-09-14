@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import init_param, loss_fn
+from .utils import init_param, make_loss
 from config import cfg
 
 
@@ -71,7 +71,7 @@ class ResNet(nn.Module):
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
 
-    def f(self, x):
+    def feature(self, x):
         x = self.conv1(x)
         x = self.layer1(x)
         x = self.layer2(x)
@@ -80,7 +80,15 @@ class ResNet(nn.Module):
         x = F.relu(self.n4(x))
         x = F.adaptive_avg_pool2d(x, 1)
         x = x.view(x.size(0), -1)
+        return x
+
+    def classify(self, x):
         x = self.linear(x)
+        return x
+
+    def f(self, x):
+        x = self.feature(x)
+        x = self.classify(x)
         return x
 
     def forward(self, input):
@@ -88,8 +96,7 @@ class ResNet(nn.Module):
         x = input['data']
         x = self.f(x)
         output['target'] = x
-        if 'target' in input:
-            output['loss'] = loss_fn(output['target'], input['target'])
+        output['loss'] = make_loss(output, input)
         return output
 
 

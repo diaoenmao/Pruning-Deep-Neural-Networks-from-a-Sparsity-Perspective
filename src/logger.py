@@ -3,12 +3,11 @@ from collections.abc import Iterable
 from torch.utils.tensorboard import SummaryWriter
 from numbers import Number
 from utils import ntuple
-import datetime
 
 
 class Logger:
-    def __init__(self, log_path):
-        self.log_path = log_path
+    def __init__(self, path):
+        self.path = path
         self.writer = None
         self.tracker = defaultdict(int)
         self.counter = defaultdict(int)
@@ -16,9 +15,9 @@ class Logger:
         self.history = defaultdict(list)
         self.iterator = defaultdict(int)
 
-    def safe(self, write):
+    def save(self, write):
         if write:
-            self.writer = SummaryWriter(self.log_path)
+            self.writer = SummaryWriter(self.path)
         else:
             if self.writer is not None:
                 self.writer.close()
@@ -89,7 +88,5 @@ class Logger:
 
 
 def make_logger(path):
-    current_time = datetime.datetime.now().strftime('%b%d_%H-%M-%S')
-    logger_path = '{}_{}'.format(path, current_time)
-    logger = Logger(logger_path)
+    logger = Logger(path)
     return logger

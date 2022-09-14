@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .utils import init_param, loss_fn
+from .utils import init_param, make_loss
 from config import cfg
 
 
@@ -71,14 +71,14 @@ class WideResNet(nn.Module):
         blocks.append(nn.AdaptiveAvgPool2d(1))
         blocks.append(nn.Flatten())
         self.blocks = nn.Sequential(*blocks)
-        self.classifier = nn.Linear(hidden_size[-1], num_classes)
+        self.linear = nn.Linear(hidden_size[-1], num_classes)
 
     def feature(self, x):
         x = self.blocks(x)
         return x
 
     def classify(self, x):
-        x = self.classifier(x)
+        x = self.linear(x)
         return x
 
     def f(self, x):
@@ -91,8 +91,7 @@ class WideResNet(nn.Module):
         x = input['data']
         x = self.f(x)
         output['target'] = x
-        if 'target' in input:
-            output['loss'] = loss_fn(output['target'], input['target'])
+        output['loss'] = make_loss(output, input)
         return output
 
 
@@ -102,6 +101,17 @@ def wresnet28x2():
     depth = cfg['wresnet28x2']['depth']
     widen_factor = cfg['wresnet28x2']['widen_factor']
     drop_rate = cfg['wresnet28x2']['drop_rate']
+    model = WideResNet(data_shape, target_size, depth, widen_factor, drop_rate)
+    model.apply(init_param)
+    return model
+
+
+def wresnet28x8():
+    data_shape = cfg['data_shape']
+    target_size = cfg['target_size']
+    depth = cfg['wresnet28x8']['depth']
+    widen_factor = cfg['wresnet28x8']['widen_factor']
+    drop_rate = cfg['wresnet28x8']['drop_rate']
     model = WideResNet(data_shape, target_size, depth, widen_factor, drop_rate)
     model.apply(init_param)
     return model

@@ -21,6 +21,7 @@ class SVHN(Dataset):
             self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, '{}.pt'.format(self.split)),
                                                mode='pickle')
+        self.other = {}
         self.classes_counts = make_classes_counts(self.target)
         self.classes_to_labels, self.target_size = load(os.path.join(self.processed_folder, 'meta.pt'), mode='pickle')
 
@@ -28,6 +29,8 @@ class SVHN(Dataset):
         id, data, target = torch.tensor(self.id[index]), Image.fromarray(self.data[index]), torch.tensor(
             self.target[index])
         input = {'id': id, 'data': data, 'target': target}
+        other = {k: torch.tensor(self.other[k][index]) for k in self.other}
+        input = {**input, **other}
         if self.transform is not None:
             input = self.transform(input)
         return input

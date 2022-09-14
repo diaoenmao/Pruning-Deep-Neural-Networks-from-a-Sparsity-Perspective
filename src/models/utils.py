@@ -1,9 +1,7 @@
-import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from config import cfg
-from utils import load
 
 
 def init_param(m):
@@ -19,6 +17,19 @@ def init_param(m):
     elif isinstance(m, nn.Linear):
         if m.bias is not None:
             m.bias.data.zero_()
+    return m
+
+
+def init_param_generator(m):
+    if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif isinstance(m, nn.BatchNorm2d):
+        if m.weight is not None:
+            m.weight.data.fill_(1)
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif isinstance(m, nn.Linear):
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
     return m
 
 
@@ -44,19 +55,36 @@ def denormalize(input):
     return input
 
 
-def loss_fn(output, target):
-    if target.dtype == torch.int64:
-        loss = F.cross_entropy(output, target)
-    else:
-        loss = F.mse_loss(output, target)
+def make_batchnorm(m, momentum, track_running_stats):
+    if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
+        m.momentum = momentum
+        m.track_running_stats = track_running_stats
+        if track_running_stats:
+            m.register_buffer('running_mean', torch.zeros(m.num_features, device=cfg['device']))
+            m.register_buffer('running_var', torch.ones(m.num_features, device=cfg['device']))
+            m.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long, device=cfg['device']))
+        else:
+            m.running_mean = None
+            m.running_var = None
+            m.num_batches_tracked = None
+    return m
+
+
+def make_loss(output, input):
+    loss = loss_fn(output['target'], input['target'])
     return loss
 
 
-def load_init_state_dict(seed):
-    pivot_data_name_dict = {'MNIST': 'MNIST', 'FashionMNIST': 'MNIST', 'CIFAR10': 'CIFAR10', 'SVHN': 'CIFAR10'}
-    pivot_data_name = pivot_data_name_dict[cfg['data_name']]
-    control_name = [pivot_data_name, cfg['control']['model_name']]
-    model_tag_list = [str(seed), *control_name]
-    model_tag = '_'.join([x for x in model_tag_list if x])
-    init_state_dict = load(os.path.join('output', 'init', '{}.pt'.format(model_tag)))['model_state_dict']
-    return init_state_dict
+def loss_fn(output, target, reduction='mean'):
+    if target.dtype == torch.int64:
+        loss = F.cross_entropy(output, target, reduction=reduction)
+    else:
+        loss = kld_loss(output, target, reduction=reduction)
+    return loss
+
+
+def cross_entropy_loss(output, target, reduction='mean'):
+    if target.dtype != torch.int64:
+        target = (target.topk(1, 1, True, True)[1]).view(-1)
+    ce = F.cross_entropy(output, target, reduction=reduction)
+    return ce

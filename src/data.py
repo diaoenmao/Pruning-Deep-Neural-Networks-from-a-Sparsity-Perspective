@@ -1,9 +1,5 @@
-import copy
 import os
-import torch
 import numpy as np
-import models
-import datasets
 from config import cfg
 from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
@@ -16,10 +12,11 @@ data_stats = {'MNIST': ((0.1307,), (0.3081,)), 'FashionMNIST': ((0.2860,), (0.35
 
 
 def fetch_dataset(data_name, verbose=True):
+    import datasets
     dataset = {}
     if verbose:
         print('fetching data {}...'.format(data_name))
-    root = os.path.join('.', 'data', data_name)
+    root = os.path.join('data', data_name)
     if data_name in ['MNIST', 'FashionMNIST']:
         dataset['train'] = eval('datasets.{}(root=root, split="train", '
                                 'transform=datasets.Compose([transforms.ToTensor()]))'.format(data_name))

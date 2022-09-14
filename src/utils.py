@@ -114,20 +114,14 @@ def process_dataset(dataset):
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
-    if 'prune_iters' in cfg['control']:
-        cfg['prune_iters'] = int(cfg['control']['prune_iters'])
-        cfg['prune_ratio'] = cfg['control']['prune_ratio']
-        cfg['prune_mode'] = cfg['control']['prune_mode'].split('-')
+    cfg['model_name'] = cfg['control']['model_name']
+    cfg['prune_iters'] = int(cfg['control']['prune_iters'])
+    cfg['prune_scope'] = cfg['control']['prune_scope']
+    cfg['prune_mode'] = cfg['control']['prune_mode']
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     cfg['data_shape'] = data_shape[cfg['data_name']]
-    if 'mlp' in cfg['control']['model_name']:
-        mlp_control_list = cfg['control']['model_name'].split('-')
-        cfg['model_name'] = mlp_control_list[0]
-        cfg['mlp'] = {'hidden_size': int(mlp_control_list[1]), 'scale_factor': float(mlp_control_list[2]),
-                      'num_layers': int(mlp_control_list[3]), 'activation': mlp_control_list[4]}
-    else:
-        cfg['model_name'] = cfg['control']['model_name']
+    cfg['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
     cfg['cnn'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
@@ -135,20 +129,13 @@ def process_control():
     model_name = cfg['model_name']
     cfg[model_name]['shuffle'] = {'train': True, 'test': False}
     cfg[model_name]['optimizer_name'] = 'SGD'
-    cfg[model_name]['lr'] = 3e-2
+    cfg[model_name]['lr'] = 1e-1
     cfg[model_name]['momentum'] = 0.9
     cfg[model_name]['weight_decay'] = 5e-4
     cfg[model_name]['nesterov'] = True
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
-    if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-        num_epochs = {'mlp': 100, 'cnn': 200, 'resnet18': 200}
-        cfg[model_name]['num_epochs'] = num_epochs[model_name]
-        cfg[model_name]['batch_size'] = {'train': 250, 'test': 500}
-    else:
-        raise ValueError('Not valid data name')
-    cfg['si_q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    cfg['norm_q'] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2]
-    cfg['stats'] = make_stats()
+    cfg[model_name]['num_epochs'] = 400
+    cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     return
 
 
@@ -192,15 +179,15 @@ class Stats(object):
         return
 
 
-def make_optimizer(model, tag):
+def make_optimizer(parameters, tag):
     if cfg[tag]['optimizer_name'] == 'SGD':
-        optimizer = optim.SGD(model.parameters(), lr=cfg[tag]['lr'], momentum=cfg[tag]['momentum'],
+        optimizer = optim.SGD(parameters, lr=cfg[tag]['lr'], momentum=cfg[tag]['momentum'],
                               weight_decay=cfg[tag]['weight_decay'], nesterov=cfg[tag]['nesterov'])
     elif cfg[tag]['optimizer_name'] == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=cfg[tag]['lr'], betas=cfg[tag]['betas'],
+        optimizer = optim.Adam(parameters, lr=cfg[tag]['lr'], betas=cfg[tag]['betas'],
                                weight_decay=cfg[tag]['weight_decay'])
     elif cfg[tag]['optimizer_name'] == 'LBFGS':
-        optimizer = optim.LBFGS(model.parameters(), lr=cfg[tag]['lr'])
+        optimizer = optim.LBFGS(parameters, lr=cfg[tag]['lr'])
     else:
         raise ValueError('Not valid optimizer name')
     return optimizer
@@ -246,23 +233,3 @@ def collate(input):
     for k in input:
         input[k] = torch.stack(input[k], 0)
     return input
-
-
-def make_layerwise_sparsity_index(model_state_dict):
-    p = (torch.arange(1, 10) / 10).tolist()
-    L = 0
-    for k, v in model_state_dict[0].items():
-        if 'weight' in k:
-            L += 1
-    sparsity_index = {'mean': np.zeros((len(p), L)),
-                      'std': np.zeros((len(p), L))}
-    for i in range(len(model_state_dict)):
-        j = 0
-        for k, v in model_state_dict[i].items():
-            if 'weight' in k:
-                mean = v.mean()
-                std = v.std() if len(v) > 1 else 0
-                sparsity_index['mean'][i, j] = mean
-                sparsity_index['std'][i, j] = std
-                j += 1
-    return sparsity_index
