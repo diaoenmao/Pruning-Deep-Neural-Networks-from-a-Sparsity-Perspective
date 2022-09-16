@@ -11,7 +11,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, make_optimizer, make_scheduler, resume, collate
 from logger import make_logger
-from modules import SparsityIndex
+from modules import Compression, Mask, SparsityIndex
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -37,45 +37,70 @@ def runExperiment():
     cfg['seed'] = int(cfg['model_tag'].split('_')[0])
     torch.manual_seed(cfg['seed'])
     torch.cuda.manual_seed(cfg['seed'])
+    model_path = os.path.join('output', 'model')
+    checkpoint_path = os.path.join(model_path, '{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
+    best_path = os.path.join(model_path, '{}_{}.pt'.format(cfg['model_tag'], 'best'))
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
     data_loader = make_data_loader(dataset, cfg['model_name'])
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
-    model.load_state_dict(models.load_init_state_dict(cfg['seed']))
-
-
-
-    optimizer = make_optimizer(model, cfg['model_name'])
+    optimizer = make_optimizer(model.parameters(), cfg['model_name'])
     scheduler = make_scheduler(optimizer, cfg['model_name'])
-    metric = Metric({'train': ['Loss'], 'test': ['Loss']})
-    result = resume('./output/model/{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'), resume_mode=cfg['resume_mode'])
+    mask = Mask(to_device(model.state_dict(), 'cpu'))
+    metric = Metric({'train': ['Loss', 'Accuracy'], 'test': ['Loss', 'Accuracy']})
+    result = resume(checkpoint_path, resume_mode=cfg['resume_mode'])
     if result is None:
-        last_epoch = 1
+        last_iter = 0
+        last_epoch = [0]
         logger = make_logger(os.path.join('output', 'runs', 'train_{}'.format(cfg['model_tag'])))
+        init_model_state_dict = to_device(model.state_dict(), 'cpu')
+        model_state_dict = [to_device(model.state_dict(), 'cpu')]
+        mask_state_dict = [to_device(mask.state_dict(), 'cpu')]
     else:
+        last_iter = result['iter']
         last_epoch = result['epoch']
-        model.load_state_dict(result['model_state_dict'])
+        init_model_state_dict = result['init_model_state_dict']
+        model_state_dict = result['model_state_dict']
+        model.load_state_dict(model_state_dict[-1])
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
+        mask_state_dict = result['mask_state_dict']
+        mask.load_state_dict(mask_state_dict[-1])
         logger = result['logger']
-    for epoch in range(last_epoch, cfg[cfg['model_name']]['num_epochs'] + 1):
-        train(data_loader['train'], model, optimizer, metric, logger, epoch)
-        test(data_loader['test'], model, metric, logger, epoch)
-        scheduler.step()
-        result = {'cfg': cfg, 'epoch': epoch + 1, 'model_state_dict': model.state_dict(),
-                  'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
-                  'logger': logger}
-        save(result, './output/model/{}_checkpoint.pt'.format(cfg['model_tag']))
-        if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
-            metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
-            shutil.copy('./output/model/{}_checkpoint.pt'.format(cfg['model_tag']),
-                        './output/model/{}_best.pt'.format(cfg['model_tag']))
-        logger.reset()
+    compression = Compression(cfg['prune_scope'], cfg['prune_mode'])
+    sparsity_index = SparsityIndex(cfg['p'], cfg['q'])
+    for iter in range(last_iter, cfg['prune_iters'] + 1):
+        if last_epoch[-1] == 1:
+            optimizer = make_optimizer(model.parameters(), cfg['model_name'])
+            scheduler = make_scheduler(optimizer, cfg['model_name'])
+        else:
+            compression.init(model, mask, init_model_state_dict)
+        for epoch in range(last_epoch[-1] + 1, cfg[cfg['model_name']]['num_epochs'] + 1):
+            logger.save(True)
+            train(data_loader['train'], model, optimizer, mask, metric, logger, iter, epoch)
+            test(data_loader['test'], model, metric, logger, iter, epoch)
+            logger.save(False)
+            scheduler.step()
+            model_state_dict[-1] = model.state_dict()
+            result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch, 'model_state_dict': model_state_dict,
+                      'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
+                      'mask_state_dict': mask_state_dict, 'logger': logger, 'sparsity_index': sparsity_index}
+            save(result, checkpoint_path)
+            if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
+                metric.update(logger.mean['test/{}'.format(metric.pivot_name)])
+                shutil.copy(checkpoint_path, best_path)
+            logger.reset()
+        if iter < cfg['prune_iters']:
+            last_epoch.append(0)
+            result = resume(best_path, resume_mode=cfg['resume_mode'])
+            model.load_state_dict(result['model_state_dict'][-1])
+            sparsity_index.make_sparsity_index(model, mask)
+            compression.compress(model, mask, sparsity_index)
+            mask_state_dict.append(mask.state_dict())
     return
 
 
-def train(data_loader, model, optimizer, metric, logger, epoch):
-    logger.safe(True)
+def train(data_loader, model, optimizer, mask, metric, logger, iter, epoch):
     model.train(True)
     start_time = time.time()
     for i, input in enumerate(data_loader):
@@ -86,6 +111,7 @@ def train(data_loader, model, optimizer, metric, logger, epoch):
         output = model(input)
         output['loss'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
+        mask.freeze_grad(model)
         optimizer.step()
         evaluation = metric.evaluate(metric.metric_name['train'], input, output)
         logger.append(evaluation, 'train', n=input_size)
@@ -93,20 +119,22 @@ def train(data_loader, model, optimizer, metric, logger, epoch):
             batch_time = (time.time() - start_time) / (i + 1)
             lr = optimizer.param_groups[0]['lr']
             epoch_finished_time = datetime.timedelta(seconds=round(batch_time * (len(data_loader) - i - 1)))
-            exp_finished_time = epoch_finished_time + datetime.timedelta(
-                seconds=round((cfg[cfg['model_name']]['num_epochs'] - epoch) * batch_time * len(data_loader)))
+            exp_finished_time = (epoch_finished_time + datetime.timedelta(
+                seconds=round((cfg[cfg['model_name']]['num_epochs'] - epoch) * batch_time * len(data_loader)))) + \
+                                datetime.timedelta(seconds=round(batch_time * len(data_loader) *
+                                                                 cfg[cfg['model_name']]['num_epochs'] *
+                                                                 (cfg['prune_iters'] - iter)))
             info = {'info': ['Model: {}'.format(cfg['model_tag']),
                              'Train Epoch: {}({:.0f}%)'.format(epoch, 100. * i / len(data_loader)),
+                             'Train Iter: {}/{}'.format(iter, cfg['prune_iters']),
                              'Learning rate: {:.6f}'.format(lr), 'Epoch Finished Time: {}'.format(epoch_finished_time),
                              'Experiment Finished Time: {}'.format(exp_finished_time)]}
             logger.append(info, 'train', mean=False)
             print(logger.write('train', metric.metric_name['train']))
-    logger.safe(False)
     return
 
 
-def test(data_loader, model, metric, logger, epoch):
-    logger.safe(True)
+def test(data_loader, model, metric, logger, iter, epoch):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
@@ -116,10 +144,11 @@ def test(data_loader, model, metric, logger, epoch):
             output = model(input)
             evaluation = metric.evaluate(metric.metric_name['test'], input, output)
             logger.append(evaluation, 'test', input_size)
-        info = {'info': ['Model: {}'.format(cfg['model_tag']), 'Test Epoch: {}({:.0f}%)'.format(epoch, 100.)]}
+        info = {'info': ['Model: {}'.format(cfg['model_tag']),
+                         'Test Epoch: {}({:.0f}%)'.format(epoch, 100.),
+                         'Test Iter: {}/{}'.format(iter, cfg['prune_iters'])]}
         logger.append(info, 'test', mean=False)
         print(logger.write('test', metric.metric_name['test']))
-    logger.safe(False)
     return
 
 

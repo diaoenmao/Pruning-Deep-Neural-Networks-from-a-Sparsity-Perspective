@@ -1,9 +1,16 @@
-from config import cfg
-from data import fetch_dataset, make_data_loader
-from utils import collate, process_dataset, save_img, process_control, resume, to_device
-import torch
-import numpy as np
+import argparse
+import datetime
 import models
+import os
+import shutil
+import time
+import torch
+import torch.backends.cudnn as cudnn
+from config import cfg, process_args
+from data import fetch_dataset, make_data_loader
+from metrics import Metric
+from utils import save, to_device, process_control, process_dataset, make_optimizer, make_scheduler, resume, collate
+from logger import make_logger
 
 # if __name__ == "__main__":
 #     cfg['seed'] = 0
@@ -194,3 +201,19 @@ import models
 #     print('corrected_si_a', corrected_si_a)
 #     print('corrected_si_b', corrected_si_b)
 #     print('corrected_si_c', corrected_si_c)
+
+
+# if __name__ == "__main__":
+#     from utils import save_model_state_dict, save_optimizer_state_dict, save_scheduler_state_dict
+#     process_control()
+#     dataset = fetch_dataset(cfg['data_name'])
+#     process_dataset(dataset)
+#     model = models.linear().to('cuda')
+#     optimizer = make_optimizer(model.parameters(), cfg['model_name'])
+#     scheduler = make_scheduler(optimizer, cfg['model_name'])
+#     model_state_dict = save_model_state_dict(model.state_dict())
+#     optimizer_state_dict = save_optimizer_state_dict(optimizer.state_dict())
+#     scheduler_state_dict = save_scheduler_state_dict(scheduler.state_dict())
+#     print(model_state_dict)
+#     print(optimizer_state_dict)
+#     print(scheduler_state_dict)

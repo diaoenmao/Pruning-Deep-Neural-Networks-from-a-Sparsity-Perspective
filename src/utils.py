@@ -1,5 +1,7 @@
 import collections.abc as container_abcs
+import copy
 import errno
+import numbers
 import numpy as np
 import os
 import pickle
@@ -99,9 +101,12 @@ def recur(fn, input, *args):
             output[key] = recur(fn, input[key], *args)
     elif isinstance(input, str):
         output = input
+    elif isinstance(input, numbers.Number):
+        output = input
     elif input is None:
         output = None
     else:
+        print(type(input))
         raise ValueError('Not valid input type')
     return output
 
@@ -117,7 +122,7 @@ def process_control():
     cfg['model_name'] = cfg['control']['model_name']
     cfg['prune_iters'] = int(cfg['control']['prune_iters'])
     cfg['prune_scope'] = cfg['control']['prune_scope']
-    cfg['prune_mode'] = cfg['control']['prune_mode']
+    cfg['prune_mode'] = cfg['control']['prune_mode'].split('-')
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     cfg['data_shape'] = data_shape[cfg['data_name']]
@@ -136,6 +141,8 @@ def process_control():
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
     cfg[model_name]['num_epochs'] = 400
     cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
+    cfg['p'] = torch.linspace(1, 2, 0.1)
+    cfg['q'] = torch.linspace(0, 1, 0.1)
     return
 
 
