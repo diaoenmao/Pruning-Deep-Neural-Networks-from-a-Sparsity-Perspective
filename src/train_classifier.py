@@ -46,8 +46,8 @@ def runExperiment():
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     optimizer = make_optimizer(model.parameters(), cfg['model_name'])
     scheduler = make_scheduler(optimizer, cfg['model_name'])
-    mask = Mask(to_device(model.state_dict(), 'cpu'))
     metric = Metric({'train': ['Loss', 'Accuracy'], 'test': ['Loss', 'Accuracy']})
+    mask = Mask(to_device(model.state_dict(), 'cpu'))
     result = resume(checkpoint_path, resume_mode=cfg['resume_mode'])
     if result is None:
         last_iter = 0
@@ -64,26 +64,29 @@ def runExperiment():
         model.load_state_dict(model_state_dict[-1])
         optimizer.load_state_dict(result['optimizer_state_dict'])
         scheduler.load_state_dict(result['scheduler_state_dict'])
+        metric.load_state_dict(result['metric_state_dict'])
         mask_state_dict = result['mask_state_dict']
         mask.load_state_dict(mask_state_dict[-1])
         logger = result['logger']
     compression = Compression(cfg['prune_scope'], cfg['prune_mode'])
     sparsity_index = SparsityIndex(cfg['p'], cfg['q'])
     for iter in range(last_iter, cfg['prune_iters'] + 1):
-        if last_epoch[-1] == 1:
+        if last_epoch[-1] == 0:
+            metric.reset()
+            compression.init(model, mask, init_model_state_dict)
+            model_state_dict.append(to_device(model.state_dict(), 'cpu'))
             optimizer = make_optimizer(model.parameters(), cfg['model_name'])
             scheduler = make_scheduler(optimizer, cfg['model_name'])
-        else:
-            compression.init(model, mask, init_model_state_dict)
         for epoch in range(last_epoch[-1] + 1, cfg[cfg['model_name']]['num_epochs'] + 1):
             logger.save(True)
             train(data_loader['train'], model, optimizer, mask, metric, logger, iter, epoch)
             test(data_loader['test'], model, metric, logger, iter, epoch)
             logger.save(False)
             scheduler.step()
-            model_state_dict[-1] = model.state_dict()
-            result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch, 'model_state_dict': model_state_dict,
-                      'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
+            model_state_dict[-1] = to_device(model.state_dict(), 'cpu')
+            result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch,
+                      'model_state_dict': model_state_dict, 'optimizer_state_dict': optimizer.state_dict(),
+                      'scheduler_state_dict': scheduler.state_dict(), 'metric_state_dict': metric.state_dict(),
                       'mask_state_dict': mask_state_dict, 'logger': logger, 'sparsity_index': sparsity_index}
             save(result, checkpoint_path)
             if metric.compare(logger.mean['test/{}'.format(metric.pivot_name)]):
@@ -92,7 +95,7 @@ def runExperiment():
             logger.reset()
         if iter < cfg['prune_iters']:
             last_epoch.append(0)
-            result = resume(best_path, resume_mode=cfg['resume_mode'])
+            result = resume(best_path, verbose=False)
             model.load_state_dict(result['model_state_dict'][-1])
             sparsity_index.make_sparsity_index(model, mask)
             compression.compress(model, mask, sparsity_index)

@@ -24,10 +24,10 @@ def RMSE(output, target):
 class Metric(object):
     def __init__(self, metric_name):
         self.metric_name = self.make_metric_name(metric_name)
-        self.pivot, self.pivot_name, self.pivot_direction = self.make_pivot()
         self.metric = {'Loss': (lambda input, output: output['loss'].item()),
                        'Accuracy': (lambda input, output: recur(Accuracy, output['target'], input['target'])),
                        'RMSE': (lambda input, output: recur(RMSE, output['target'], input['target']))}
+        self.reset()
 
     def make_metric_name(self, metric_name):
         for split in metric_name:
@@ -37,14 +37,15 @@ class Metric(object):
                 raise ValueError('Not valid data name')
         return metric_name
 
-    def make_pivot(self):
+    def reset(self):
         if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
             pivot = -float('inf')
             pivot_direction = 'up'
             pivot_name = 'Accuracy'
         else:
             raise ValueError('Not valid data name')
-        return pivot, pivot_name, pivot_direction
+        self.pivot, self.pivot_name, self.pivot_direction = pivot, pivot_name, pivot_direction
+        return
 
     def evaluate(self, metric_names, input, output):
         evaluation = {}
@@ -64,3 +65,12 @@ class Metric(object):
     def update(self, val):
         self.pivot = val
         return
+
+    def load_state_dict(self, state_dict):
+        self.pivot = state_dict['pivot']
+        self.pivot_name = state_dict['pivot_name']
+        self.pivot_direction = state_dict['pivot_direction']
+        return
+
+    def state_dict(self):
+        return {'pivot': self.pivot, 'pivot_name': self.pivot_name, 'pivot_direction': self.pivot_direction}

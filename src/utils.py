@@ -126,6 +126,7 @@ def process_control():
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
                   'CIFAR100': [3, 32, 32]}
     cfg['data_shape'] = data_shape[cfg['data_name']]
+    cfg['linear'] = {}
     cfg['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
     cfg['cnn'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
@@ -139,10 +140,10 @@ def process_control():
     cfg[model_name]['weight_decay'] = 5e-4
     cfg[model_name]['nesterov'] = True
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
-    cfg[model_name]['num_epochs'] = 400
+    cfg[model_name]['num_epochs'] = 1
     cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
-    cfg['p'] = torch.linspace(1, 2, 0.1)
-    cfg['q'] = torch.linspace(0, 1, 0.1)
+    cfg['p'] = torch.linspace(0.1, 1, 20)
+    cfg['q'] = torch.linspace(0.1, 2, 20)
     return
 
 

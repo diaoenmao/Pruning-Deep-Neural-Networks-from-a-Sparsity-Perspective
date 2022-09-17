@@ -1,94 +1,27 @@
-# MLP
-python make.py --mode init --model mlp --data MNIST --run make --round 16 --num_experiments 4 --round 16 --split_round 1
-python make.py --mode init --model mlp --data CIFAR10 --run make --round 16 --num_experiments 4 --round 16 --split_round 1
+#!/bin/bash
 
-python make.py --mode teacher --model mlp --data MNIST --run train --round 16 --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model mlp --data MNIST --run test --round 16 --num_experiments 4 --round 16 --split_round 1
+modes=('os', 'lt', 'si')
+resume_mode=0
+num_gpus=1
+round=8
+num_experiments=4
 
-python make.py --mode teacher --model mlp --data FashionMNIST --run train --round 16 --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model mlp --data FashionMNIST --run test --round 16 --num_experiments 4 --round 16 --split_round 1
+# os
+python make.py --mode os --run train --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
+python make.py --mode os --run test --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
 
-python make.py --mode teacher --model mlp --data CIFAR10 --run train --round 16 --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model mlp --data CIFAR10 --run test --round 16 --num_experiments 4 --round 16 --split_round 1
+# lt
+python make.py --mode lt --run train --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
+python make.py --mode lt --run test --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
 
-python make.py --mode teacher --model mlp --data SVHN --run train --round 16 --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model mlp --data SVHN --run test --round 16 --num_experiments 4 --round 16 --split_round 1
+# si-pq
+python make.py --mode si-pq --run train --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
+python make.py --mode si-pq --run test --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
 
-python make.py --mode once --model mlp --data MNIST --run train --round 16 --split_round 1
-python make.py --mode once --model mlp --data MNIST --run test --round 16 --split_round 1
+# si-eta_m
+python make.py --mode si-eta_m --run train --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
+python make.py --mode si-eta_m --run test --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
 
-python make.py --mode once --model mlp --data FashionMNIST --run train --round 16 --split_round 1
-python make.py --mode once --model mlp --data FashionMNIST --run test --round 16 --split_round 1
-
-python make.py --mode once --model mlp --data CIFAR10 --run train --round 16 --split_round 1
-python make.py --mode once --model mlp --data CIFAR10 --run test --round 16 --split_round 1
-
-python make.py --mode once --model mlp --data SVHN --run train --round 16 --split_round 1
-python make.py --mode once --model mlp --data SVHN --run test --round 16 --split_round 1
-
-python make.py --mode lt --model mlp --data MNIST --run train --round 16 --split_round 1
-python make.py --mode lt --model mlp --data MNIST --run test --round 16 --split_round 1
-
-python make.py --mode lt --model mlp --data FashionMNIST --run train --round 16 --split_round 1
-python make.py --mode lt --model mlp --data FashionMNIST --run test --round 16 --split_round 1
-
-python make.py --mode lt --model mlp --data CIFAR10 --run train --round 16 --split_round 1
-python make.py --mode lt --model mlp --data CIFAR10 --run test --round 16 --split_round 1
-
-python make.py --mode lt --model mlp --data SVHN --run train --round 16 --split_round 1
-python make.py --mode lt --model mlp --data SVHN --run test --round 16 --split_round 1
-
-python make.py --mode si --model mlp --data MNIST --run train --round 16 --split_round 1
-python make.py --mode si --model mlp --data MNIST --run test --round 16 --split_round 1
-
-python make.py --mode si --model mlp --data FashionMNIST --run train --round 16 --split_round 1
-python make.py --mode si --model mlp --data FashionMNIST --run test --round 16 --split_round 1
-
-python make.py --mode si --model mlp --data CIFAR10 --run train --round 16 --split_round 1
-python make.py --mode si --model mlp --data CIFAR10 --run test --round 16 --split_round 1
-
-python make.py --mode si --model mlp --data SVHN --run train --round 16 --split_round 1
-python make.py --mode si --model mlp --data SVHN --run test --round 16 --split_round 1
-
-# Ablation
-python make.py --mode si-q --model mlp --data MNIST --run train --round 16 --split_round 1
-python make.py --mode si-q --model mlp --data MNIST --run test --round 16 --split_round 1
-
-python make.py --mode si-eta --model mlp --data MNIST --run train --round 16 --split_round 1
-python make.py --mode si-eta --model mlp --data MNIST --run test --round 16 --split_round 1
-
-python make.py --mode si-q --model mlp --data CIFAR10 --run train --round 16 --split_round 1
-python make.py --mode si-q --model mlp --data CIFAR10 --run test --round 16 --split_round 1
-
-python make.py --mode si-eta --model mlp --data CIFAR10 --run train --round 16 --split_round 1
-python make.py --mode si-eta --model mlp --data CIFAR10 --run test --round 16 --split_round 1
-
-# CNN
-python make.py --mode init --model cnn --data CIFAR10 --run make --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode teacher --model cnn --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model cnn --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode once --model cnn --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode once --model cnn --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode lt --model cnn --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode lt --model cnn --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode si --model cnn --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode si --model cnn --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-# ResNet
-python make.py --mode init --model resnet18 --data CIFAR10 --run make --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode teacher --model resnet18 --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode teacher --model resnet18 --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode once --model resnet18 --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode once --model resnet18 --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode lt --model resnet18 --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode lt --model resnet18 --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
-
-python make.py --mode si --model resnet18 --data CIFAR10 --run train --num_experiments 4 --round 16 --split_round 1
-python make.py --mode si --model resnet18 --data CIFAR10 --run test --num_experiments 4 --round 16 --split_round 1
+# si-gamma
+python make.py --mode si-gamma --run train --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4
+python make.py --mode si-gamma --run test --resume_mode 0 --num_gpus 4 --round 12 --num_experiments 4

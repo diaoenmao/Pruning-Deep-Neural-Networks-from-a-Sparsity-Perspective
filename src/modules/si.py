@@ -10,7 +10,7 @@ class SparsityIndex:
 
     def sparsity_index(self, x, mask, p, q, dim):
         d = mask.to(x.device).float().sum(dim=dim)
-        si = (torch.linalg.norm(x, 1, dim=dim).pow(p) / d).pow(1 / p) / \
+        si = (torch.linalg.norm(x, p, dim=dim).pow(p) / d).pow(1 / p) / \
              (torch.linalg.norm(x, q, dim=dim).pow(q) / d).pow(1 / q)
         return si
 
@@ -29,6 +29,7 @@ class SparsityIndex:
                     si_i = []
                     for i in range(len(self.p)):
                         for j in range(len(self.q)):
+                            param = param.view(param.size(0), -1)
                             si_i.append(self.sparsity_index(param, mask.state_dict()[name], self.p[i], self.q[j], 1))
                     si_i = torch.cat(si_i, dim=0)
                     si[name] = si_i.reshape((len(self.p), len(self.q), -1))
@@ -39,7 +40,8 @@ class SparsityIndex:
                     si_i = []
                     for i in range(len(self.p)):
                         for j in range(len(self.q)):
-                            si.append(self.sparsity_index(param, mask.state_dict()[name], self.p[i], self.q[j], -1))
+                            param = param.view(-1)
+                            si_i.append(self.sparsity_index(param, mask.state_dict()[name], self.p[i], self.q[j], -1))
                     si_i = torch.cat(si_i, dim=0)
                     si[name] = si_i.reshape((len(self.p), len(self.q), -1))
         elif mode == 'global':
@@ -55,8 +57,8 @@ class SparsityIndex:
             si_i = []
             for i in range(len(self.p)):
                 for j in range(len(self.q)):
-                    si.append(self.sparsity_index(param_all, mask_all, self.p[i], self.q[j], -1))
-            si_i = torch.cat(si_i, dim=0)
+                    si_i.append(self.sparsity_index(param_all, mask_all, self.p[i], self.q[j], -1))
+            si_i = torch.tensor(si_i)
             si['global'] = si_i.reshape((len(self.p), len(self.q), -1))
         else:
             raise ValueError('Not valid mode')

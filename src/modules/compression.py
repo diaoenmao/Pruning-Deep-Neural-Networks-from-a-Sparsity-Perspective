@@ -2,8 +2,8 @@ import torch
 from collections import OrderedDict
 
 
-def make_bound_si(si, d, p, q, gamma, eta_m):
-    m = d * si ** (q / (q - 1)) * (1 + eta_m) ** (1 / (q - 1))
+def make_bound_si(si, d, p, q, eta_m):
+    m = d * (1 + eta_m) ** (q / (p - q)) * si ** ((q * p) / (q - p))
     m = torch.ceil(m).long()
     return m
 
@@ -35,17 +35,18 @@ class Compression:
                     pivot_param = param.data.abs()
                     pivot_param[~mask_i] = float('nan')
                     if self.prune_mode[0] == 'si':
-                        p, q, gamma, eta_m = self.prune_mode[1:]
+                        p, q, eta_m, gamma = self.prune_mode[1:]
                         p_idx = sparsity_index.p.index(p)
                         q_idx = sparsity_index.q.index(q)
                         si_i = sparsity_index.si[self.prune_scope][-1][name][p_idx, q_idx]
                         d = mask_i.float().sum(dim=list(range(1, param.dim()))).to(si_i.device)
-                        m = gamma ** (1 / (1 - q)) * self.make_bound_si(si_i, d, p, q, gamma, eta_m) / d
-                        prune_ratio = torch.minimum(eta_m * (1 - m), d.new_tensor([0.9]))
-                        prune_ratio[m > 1] = 0.
-                        d_m = torch.floor(d * prune_ratio).long()
+                        m = self.make_bound_si(si_i, d, p, q, eta_m)
+                        retain_ratio = m / d
+                        prune_ratio = gamma * (1 - retain_ratio)
+                        prune_ratio[retain_ratio > 1] = 0.
+                        p_m = torch.floor(d * prune_ratio).long()
                         pivot_value = torch.sort(pivot_param.view(pivot_param.size(0), -1), dim=1)[0][
-                            torch.arange(pivot_param.size(0)), d_m]
+                            torch.arange(pivot_param.size(0)), p_m]
                         pivot_value = pivot_value.view(-1, *[1 for _ in range(pivot_param.dim() - 1)])
                     elif self.prune_mode[0] in ['os', 'lt']:
                         prune_ratio = float(self.prune_mode[1])
@@ -56,7 +57,7 @@ class Compression:
                     new_mask[name] = torch.where(pivot_mask, False, mask_i)
                     param.data = torch.where(new_mask[name].to(param.device), param.data,
                                              torch.tensor(0, dtype=torch.float, device=param.device))
-        elif self.prune_mode[1] == 'layer':
+        elif self.prune_scope == 'layer':
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
@@ -64,18 +65,19 @@ class Compression:
                     mask_i = mask.state_dict()[name]
                     pivot_param = param[mask_i].data.abs()
                     if self.prune_mode[0] == 'si':
-                        p, q, gamma, eta_m = self.prune_mode[1:]
+                        p, q, eta_m, gamma= self.prune_mode[1:]
                         p_idx = sparsity_index.p.index(p)
                         q_idx = sparsity_index.q.index(q)
                         si_i = sparsity_index.si[self.prune_scope][-1][name][p_idx, q_idx]
                         d = mask_i.float().sum().to(si_i.device)
-                        m = gamma ** (1 / (1 - q)) * self.make_bound_si(si_i, d, p, q, gamma, eta_m) / d
-                        if m > 1:
+                        m = self.make_bound_si(si_i, d, p, q, eta_m)
+                        retain_ratio = m / d
+                        if retain_ratio > 1:
                             prune_ratio = 0.
                         else:
-                            prune_ratio = min(eta_m * (1 - m), 0.9)
-                        d_m = torch.floor(d * prune_ratio).long()
-                        pivot_value = torch.sort(pivot_param.view(-1))[0][d_m]
+                            prune_ratio = gamma * (1 - retain_ratio)
+                        p_m = torch.floor(d * prune_ratio).long()
+                        pivot_value = torch.sort(pivot_param.view(-1))[0][p_m]
                     elif self.prune_mode[0] in ['os', 'lt']:
                         prune_ratio = float(self.prune_ratio)
                         pivot_value = torch.quantile(pivot_param, prune_ratio)
@@ -85,7 +87,7 @@ class Compression:
                     new_mask[name] = torch.where(pivot_mask, False, mask_i)
                     param.data = torch.where(new_mask[name].to(param.device), param.data,
                                              torch.tensor(0, dtype=torch.float, device=param.device))
-        elif self.prune_mode[1] == 'global':
+        elif self.prune_scope == 'global':
             pivot_param = []
             pivot_mask = []
             for name, param in model.named_parameters():
@@ -104,13 +106,14 @@ class Compression:
                 mask_i = pivot_mask
                 si_i = sparsity_index.si[self.prune_scope][-1]['global'][p_idx, q_idx]
                 d = mask_i.float().sum().to(si_i.device)
-                m = gamma ** (1 / (1 - q)) * self.make_bound_si(si_i, d, p, q, gamma, eta_m) / d
+                m = self.make_bound_si(si_i, d, p, q, eta_m)
+                retain_ratio = m / d
                 if m > 1:
                     prune_ratio = 0.
                 else:
-                    prune_ratio = min(eta_m * (1 - m), 0.9)
-                d_m = torch.floor(d * prune_ratio).long()
-                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][d_m]
+                    prune_ratio = gamma * (1 - retain_ratio)
+                p_m = torch.floor(d * prune_ratio).long()
+                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][p_m]
             else:
                 prune_ratio = float(self.prune_ratio)
                 pivot_value = torch.quantile(pivot_param.data.abs(), prune_ratio)
@@ -125,5 +128,5 @@ class Compression:
                                              torch.tensor(0, dtype=torch.float, device=param.device))
         else:
             raise ValueError('Not valid prune mode')
-        self.mask.state_dict = new_mask
+        mask.load_state_dict(new_mask)
         return

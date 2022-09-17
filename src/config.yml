@@ -5,7 +5,7 @@ control:
   model_name: mlp
   prune_iters: 30
   prune_scope: layer
-  prune_mode: si-1-0.5-1-0 # p-q-gamma-eta_m
+  prune_mode: si-0.5-1-0-1 # p-q-eta_m-gamma
 # experiment
 num_workers: 0
 init_seed: 0
