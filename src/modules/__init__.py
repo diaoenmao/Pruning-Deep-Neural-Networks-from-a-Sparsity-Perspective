@@ -1,3 +1,3 @@
 from .compression import *
 from .mask import *
-from .si import *
+from .sparsity_index import *

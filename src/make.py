@@ -55,8 +55,10 @@ def main():
     filename = '{}_{}'.format(run, mode)
     if mode == 'os':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer', 'global']
         prune_mode = ['os-0.2']
@@ -64,8 +66,10 @@ def main():
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer', 'global']
         prune_mode = ['lt-0.2']
@@ -73,18 +77,22 @@ def main():
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'si-pq':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer', 'global']
-        prune_mode = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1',
+        prune_mode = ['si-0.1-1-0-1', 'si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1',
                       'si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1', 'si-1-2-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'eta_m':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer', 'global']
         prune_mode = ['si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1', 'si-0.5-1-10-1']
@@ -92,8 +100,10 @@ def main():
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'gamma':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer', 'global']
         prune_mode = ['si-0.5-1-0-2', 'si-0.5-1-0-4', 'si-0.5-1-0-6', 'si-0.5-1-0-8']

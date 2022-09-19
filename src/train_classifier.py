@@ -96,7 +96,12 @@ def runExperiment():
         if iter < cfg['prune_iters']:
             last_epoch.append(0)
             result = resume(best_path, verbose=False)
-            model.load_state_dict(result['model_state_dict'][-1])
+            if cfg['prune_mode'][0] in ['os']:
+                model.load_state_dict(result['model_state_dict'][0])
+            elif cfg['prune_mode'][0] in ['lt', 'si']:
+                model.load_state_dict(result['model_state_dict'][-1])
+            else:
+                raise ValueError('Not valid prune mode')
             sparsity_index.make_sparsity_index(model, mask)
             compression.compress(model, mask, sparsity_index)
             mask_state_dict.append(mask.state_dict())
