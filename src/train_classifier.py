@@ -74,15 +74,18 @@ def runExperiment():
         if last_epoch[-1] == 0:
             metric.reset()
             compression.init(model, mask, init_model_state_dict)
-            model_state_dict.append(to_device(model.state_dict(), 'cpu'))
             optimizer = make_optimizer(model.parameters(), cfg['model_name'])
             scheduler = make_scheduler(optimizer, cfg['model_name'])
+            if iter > 0:
+                model_state_dict.append(to_device(model.state_dict(), 'cpu'))
+                mask_state_dict.append(mask.state_dict())
         for epoch in range(last_epoch[-1] + 1, cfg[cfg['model_name']]['num_epochs'] + 1):
             logger.save(True)
             train(data_loader['train'], model, optimizer, mask, metric, logger, iter, epoch)
             test(data_loader['test'], model, metric, logger, iter, epoch)
             logger.save(False)
             scheduler.step()
+            last_epoch[-1] = epoch
             model_state_dict[-1] = to_device(model.state_dict(), 'cpu')
             result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch,
                       'model_state_dict': model_state_dict, 'optimizer_state_dict': optimizer.state_dict(),
@@ -104,7 +107,6 @@ def runExperiment():
                 raise ValueError('Not valid prune mode')
             sparsity_index.make_sparsity_index(model, mask)
             compression.compress(model, mask, sparsity_index)
-            mask_state_dict.append(mask.state_dict())
     return
 
 

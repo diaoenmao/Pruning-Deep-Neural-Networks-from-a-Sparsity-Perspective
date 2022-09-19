@@ -16,6 +16,8 @@ class SparsityIndex:
         # si = d ** ((1 / q) - (1 / p)) * torch.linalg.norm(x, p, dim=dim) / torch.linalg.norm(x, q, dim=dim)
         si = (torch.linalg.norm(x, q, dim=dim) -
               d ** ((1 / q) - (1 / p)) * torch.linalg.norm(x, p, dim=dim)) / torch.linalg.norm(x, q, dim=dim)
+        numerical_check = d ** ((1 / q) - (1 / p)) < 1e-10
+        si[numerical_check] = 1
         return si
 
     def make_gini(self, x, mask, dim, *args):
@@ -47,7 +49,7 @@ class SparsityIndex:
                     for i in range(len(self.p)):
                         for j in range(len(self.q)):
                             param_i = param.view(param.size(0), -1)
-                            mask_i = mask.state_dict()[name]
+                            mask_i = mask.state_dict()[name].view(param.size(0), -1)
                             sparsity_index_i.append(func(param_i, mask_i, 1, self.p[i], self.q[j]))
                     sparsity_index_i = torch.cat(sparsity_index_i, dim=0)
                     sparsity_index[name] = sparsity_index_i.reshape((len(self.p), len(self.q), -1))

@@ -43,8 +43,7 @@ class Compression:
                         d = mask_i.float().sum(dim=list(range(1, param.dim()))).to(si_i.device)
                         m = make_bound_si(si_i, d, p, q, eta_m)
                         retain_ratio = m / d
-                        prune_ratio = gamma * (1 - retain_ratio)
-                        prune_ratio[retain_ratio > 1] = 0.
+                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.99)
                         num_prune = torch.floor(d * prune_ratio).long()
                         pivot_value = torch.sort(pivot_param.view(pivot_param.size(0), -1), dim=1)[0][
                             torch.arange(pivot_param.size(0)), num_prune]
@@ -74,10 +73,7 @@ class Compression:
                         d = mask_i.float().sum().to(si_i.device)
                         m = make_bound_si(si_i, d, p, q, eta_m)
                         retain_ratio = m / d
-                        if retain_ratio > 1:
-                            prune_ratio = 0.
-                        else:
-                            prune_ratio = gamma * (1 - retain_ratio)
+                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.99)
                         num_prune = torch.floor(d * prune_ratio).long()
                         pivot_value = torch.sort(pivot_param.view(-1))[0][num_prune]
                     elif self.prune_mode[0] in ['os', 'lt']:
@@ -99,7 +95,7 @@ class Compression:
                     pivot_param_i = param[mask_i].abs()
                     pivot_param.append(pivot_param_i.view(-1))
                     pivot_mask.append(mask_i.view(-1))
-            pivot_param = torch.cat(pivot_param, dim=0)
+            pivot_param = torch.cat(pivot_param, dim=0).data.abs()
             pivot_mask = torch.cat(pivot_mask, dim=0)
             if self.prune_mode[0] == 'si':
                 p, q, gamma, eta_m = self.prune_mode[1:]
@@ -111,12 +107,9 @@ class Compression:
                 d = mask_i.float().sum().to(si_i.device)
                 m = make_bound_si(si_i, d, p, q, eta_m)
                 retain_ratio = m / d
-                if m > 1:
-                    prune_ratio = 0.
-                else:
-                    prune_ratio = gamma * (1 - retain_ratio)
+                prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.99)
                 num_prune = torch.floor(d * prune_ratio).long()
-                pivot_value = torch.sort(pivot_param.data.abs().view(-1))[0][num_prune]
+                pivot_value = torch.sort(pivot_param.view(-1))[0][num_prune]
             else:
                 prune_ratio = float(self.prune_mode[1])
                 pivot_value = torch.quantile(pivot_param.data.abs(), prune_ratio)

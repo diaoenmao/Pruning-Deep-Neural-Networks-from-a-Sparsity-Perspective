@@ -140,11 +140,16 @@ def process_control():
     cfg[model_name]['weight_decay'] = 5e-4
     cfg[model_name]['nesterov'] = True
     cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
-    cfg[model_name]['num_epochs'] = 1
+    if model_name in ['linear', 'mlp']:
+        cfg[model_name]['num_epochs'] = 200
+    elif model_name in ['cnn', 'resnet9', 'resnet18', 'wresnet28x2']:
+        cfg[model_name]['num_epochs'] = 400
+    else:
+        raise ValueError('Not valid model name')
     cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     cfg['p'] = torch.arange(0.1, 1.1, 0.1)
     cfg['q'] = torch.arange(1.0, 2.1, 0.1)
-    print(cfg['p'], cfg['q'])
+    torch.set_num_threads(2)
     return
 
 

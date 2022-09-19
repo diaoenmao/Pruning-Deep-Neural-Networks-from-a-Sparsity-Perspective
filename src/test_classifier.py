@@ -51,7 +51,7 @@ def runExperiment():
     sparsity_index = result['sparsity_index']
     data_loader = make_data_loader(dataset, cfg['model_name'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
-    for iter in range(0, cfg['prune_iters'] + 1):
+    for iter in range(len(model_state_dict)):
         model.load_state_dict(model_state_dict[iter])
         mask.load_state_dict(mask_state_dict[iter])
         test_logger.save(True)
