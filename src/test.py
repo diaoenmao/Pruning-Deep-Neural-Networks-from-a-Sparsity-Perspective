@@ -217,3 +217,15 @@ from logger import make_logger
 #     print(model_state_dict)
 #     print(optimizer_state_dict)
 #     print(scheduler_state_dict)
+
+# if __name__ == "__main__":
+#     dim = -1
+#     d = 100
+#     x = torch.randn(100)
+#     p = 0.5
+#     q = 1
+#     # si = (torch.linalg.norm(x, q, dim=dim).pow(q) / d).pow(1 / q) / \
+#     #      (torch.linalg.norm(x, p, dim=dim).pow(p) / d).pow(1 / p)
+#     si = (torch.linalg.norm(x, p, dim=dim).pow(p) / d).pow(1 / p) / \
+#          (torch.linalg.norm(x, q, dim=dim).pow(q) / d).pow(1 / q)
+#     print(si)

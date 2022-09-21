@@ -47,8 +47,9 @@ def runExperiment():
     last_iter = result['iter']
     last_epoch = result['epoch']
     model_state_dict = result['model_state_dict']
-    mask_state_dict = result['model_state_dict']
+    mask_state_dict = result['mask_state_dict']
     sparsity_index = result['sparsity_index']
+    sparsity_index.reset()
     data_loader = make_data_loader(dataset, cfg['model_name'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
     for iter in range(len(model_state_dict)):
@@ -57,10 +58,12 @@ def runExperiment():
         test_logger.save(True)
         test(data_loader['test'], model, metric, test_logger, iter, last_epoch[iter])
         test_logger.save(False)
+        sparsity_index.make_sparsity_index(model, mask)
     result = resume(checkpoint_path)
     train_logger = result['logger'] if 'logger' in result else None
     result = {'cfg': cfg, 'iter': last_iter, 'epoch': last_epoch,
-              'logger': {'train': train_logger, 'test': test_logger}, 'sparsity_index': sparsity_index}
+              'logger': {'train': train_logger, 'test': test_logger}, 'mask_state_dict': mask_state_dict,
+              'sparsity_index': sparsity_index}
     save(result, result_path)
     return
 

@@ -1,21 +1,22 @@
 import os
 import itertools
-import json
-import torch
 import numpy as np
+import torch
 import pandas as pd
-from utils import save, load, makedir_exist_ok, make_layerwise_sparsity_index
+from utils import save, load, makedir_exist_ok
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-result_path = './output/result'
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+result_path = os.path.join('output', 'result')
 save_format = 'png'
-vis_path = './output/vis/{}'.format(save_format)
+vis_path = os.path.join('output', 'vis', '{}'.format(save_format))
 num_experiments = 1
 exp = [str(x) for x in list(range(num_experiments))]
+dpi = 300
 
 
-def make_controls(control_name):
+def make_control(control_name):
     control_names = []
     for i in range(len(control_name)):
         control_names.extend(list('_'.join(x) for x in itertools.product(*control_name[i])))
@@ -24,253 +25,271 @@ def make_controls(control_name):
     return controls
 
 
-def make_control_list(mode, data, model):
-    if mode == 'teacher':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            model_name = [model]
-        control_name = [[data_name, model_name]]
-        controls = make_controls(control_name)
-    elif mode == 'once':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-neuron', 'once-layer', 'once-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['once-global']]]
-        controls = make_controls(control_name)
+def make_controls(mode):
+    if mode == 'os':
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
+        # model_names = ['linear']
+        prune_iters = ['30']
+        # prune_scope = ['neuron', 'layer', 'global']
+        prune_scope = ['global']
+        prune_mode = ['os-0.2']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
     elif mode == 'lt':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            raise ValueError('Not valid model')
-        control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-neuron', 'lt-layer', 'lt-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['0.2'], ['lt-global']]]
-        controls = make_controls(control_name)
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
+        # model_names = ['linear']
+        prune_iters = ['30']
+        # prune_scope = ['neuron', 'layer', 'global']
+        prune_scope = ['global']
+        prune_mode = ['lt-0.2']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
     elif mode == 'si':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['128', '256'], ['1'], ['2', '4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            raise ValueError('Not valid model')
-        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0'], ['si-neuron', 'si-layer', 'si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-5'], ['si-neuron', 'si-layer', 'si-global']]]
-        controls = make_controls(control_name)
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear', 'mlp']
+        # model_names = ['linear']
+        prune_iters = ['30']
+        # prune_scope = ['neuron', 'layer', 'global']
+        prune_scope = ['global']
+        prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
+    elif mode == 'scope':
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['mlp']
+        prune_iters = ['30']
+        prune_scope = ['neuron', 'layer']
+        prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
+    elif mode == 'si-p':
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear']
+        prune_iters = ['30']
+        prune_scope = ['global']
+        prune_mode = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
     elif mode == 'si-q':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['256'], ['1'], ['4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            model_name = [model]
-        # control_name = [[data_name, model_name, ['30'], ['si-0.2-0', 'si-0.4-0', 'si-0.6-0', 'si-0.8-0'],
-        #                  ['si-neuron', 'si-layer', 'si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.2-5', 'si-0.4-5', 'si-0.6-5', 'si-0.8-5'],
-                         ['si-neuron', 'si-layer', 'si-global']]]
-        controls = make_controls(control_name)
-    elif mode == 'si-eta':
-        data_name = [data]
-        if model == 'mlp':
-            model_name = [['mlp'], ['256'], ['1'], ['4'], ['relu']]
-            model_name = list(itertools.product(*model_name))
-            for i in range(len(model_name)):
-                model_name[i] = '-'.join(model_name[i])
-        else:
-            model_name = [model]
-        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0.01', 'si-0.5-0.1', 'si-0.5-1', 'si-0.5-10'],
-        #                  ['si-neuron', 'si-layer', 'si-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['si-0.5-0.01', 'si-0.5-0.1', 'si-0.5-1', 'si-0.5-10'],
-        #                  ['si-global']]]
-        # control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-2', 'si-0.5-3', 'si-0.5-4', 'si-0.5-5'],
-        #                  ['si-global']]]
-        control_name = [[data_name, model_name, ['30'], ['si-0.5-1', 'si-0.5-3', 'si-0.5-7', 'si-0.5-9'],
-                         ['si-neuron', 'si-layer', 'si-global']]]
-        controls = make_controls(control_name)
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear']
+        prune_iters = ['30']
+        prune_scope = ['global']
+        prune_mode = ['si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
+    elif mode == 'si-eta_m':
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear']
+        prune_iters = ['30']
+        prune_scope = ['global']
+        prune_mode = ['si-0.5-1-0.001-1', 'si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
+    elif mode == 'si-gamma':
+        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
+        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
+        data_names = ['FashionMNIST']
+        model_names = ['linear']
+        prune_iters = ['30']
+        prune_scope = ['global']
+        prune_mode = ['si-0.5-1-0-3', 'si-0.5-1-0-5', 'si-0.5-1-0-7', 'si-0.5-1-0-9']
+        control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
+        controls = make_control(control_name)
     else:
         raise ValueError('Not valid mode')
     return controls
 
 
 def main():
-    mode = ['teacher', 'once', 'lt', 'si', 'si-q', 'si-eta']
-    # data = ['MNIST', 'FashionMNIST', 'CIFAR10', 'SVHN']
-    # mode = ['teacher', 'once', 'lt', 'si']
-    data = ['MNIST', 'FashionMNIST']
+    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
     controls = []
-    for mode_i in mode:
-        if mode_i in ['teacher', 'once', 'lt', 'si']:
-            data = ['MNIST', 'FashionMNIST']
-        elif mode_i in ['si-q', 'si-eta']:
-            data = ['MNIST']
-        for data_i in data:
-            controls += make_control_list(mode_i, data_i, 'mlp')
-    processed_result_exp, processed_result_history = process_result(controls)
-    save(processed_result_exp, os.path.join(result_path, 'processed_result_exp.pt'))
-    save(processed_result_history, os.path.join(result_path, 'processed_result_history.pt'))
-    extracted_processed_result_exp = {}
-    extracted_processed_result_history = {}
-    extract_processed_result(extracted_processed_result_exp, processed_result_exp, [])
-    extract_processed_result(extracted_processed_result_history, processed_result_history, [])
-    df_exp = make_df_result(extracted_processed_result_exp, 'exp')
-    df_history = make_df_result(extracted_processed_result_history, 'history')
-    # make_vis_by_layer(df_exp, 'SI')
-    # make_vis_by_prune(df_exp, 'Loss')
-    # make_vis_by_prune(df_exp, 'Loss-Teacher')
-    make_vis_by_prune(df_exp, 'Accuracy')
-    make_vis_by_si_q(df_exp, 'Accuracy')
-    make_vis_by_si_eta(df_exp, 'Accuracy')
+    for mode in modes:
+        controls += make_controls(mode)
+    processed_result = process_result(controls)
+    df_history = make_df(processed_result, 'history')
+    make_vis_by_prune(df_history)
+    make_vis_by_p(df_history)
+    make_vis_by_q(df_history)
+    make_vis_by_eta_m(df_history)
+    make_vis_by_gamma(df_history)
+    make_vis_by_pq(df_history)
+    make_vis_by_layer(df_history)
     return
 
 
+def tree():
+    return defaultdict(tree)
+
+
 def process_result(controls):
-    processed_result_exp, processed_result_history = {}, {}
+    result = tree()
     for control in controls:
         model_tag = '_'.join(control)
-        extract_result(list(control), model_tag, processed_result_exp, processed_result_history)
-    summarize_result(processed_result_exp)
-    summarize_result(processed_result_history)
-    return processed_result_exp, processed_result_history
+        gather_result(list(control), model_tag, result)
+    summarize_result(None, result)
+    save(result, os.path.join(result_path, 'processed_result.pt'))
+    processed_result = tree()
+    extract_result(processed_result, result, [])
+    return processed_result
 
 
-def extract_result(control, model_tag, processed_result_exp, processed_result_history):
+def gather_result(control, model_tag, processed_result):
     if len(control) == 1:
         exp_idx = exp.index(control[0])
         base_result_path_i = os.path.join(result_path, '{}.pt'.format(model_tag))
         if os.path.exists(base_result_path_i):
             base_result = load(base_result_path_i)
-            for k in base_result['logger']['test'].history:
-                metric_name = k.split('/')[1]
-                if metric_name not in processed_result_exp:
-                    processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                processed_result_exp[metric_name]['exp'][exp_idx] = base_result['logger']['test'].history[k]
-            q = base_result['sparsity_index'].q
-            # q = [0.5]
-            for k in base_result['sparsity_index'].si:
-                for i in range(len(q)):
-                    metric_name = 'SI-{}-{}'.format(k, q[i])
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    si_k_i = []
-                    for m in range(len(base_result['sparsity_index'].si[k])):
-                        si_k_i_m = make_y(base_result['sparsity_index'].si[k][m][i], k)
-                        si_k_i.extend(si_k_i_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = si_k_i
-                for i in range(len(q)):
-                    metric_name = 'SIe-{}-{}'.format(k, q[i])
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    sie_k_i = []
-                    for m in range(len(base_result['sparsity_index'].sie[k])):
-                        sie_k_i_m = make_y(base_result['sparsity_index'].sie[k][m][i], k)
-                        sie_k_i.extend(sie_k_i_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = sie_k_i
-            if 'compression' in base_result:
-                mode = ['neuron', 'layer', 'global']
-                for k in mode:
-                    metric_name = 'CR-{}'.format(k)
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    cr = []
-                    for m in range(len(base_result['compression'].mask)):
-                        cr_m = make_cr(base_result['compression'].mask[m], k)
-                        cr.extend(cr_m)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = cr
-                for k in mode:
-                    metric_name = 'MD-{}'.format(k)
-                    if metric_name not in processed_result_exp:
-                        processed_result_exp[metric_name] = {'exp': [None for _ in range(num_experiments)]}
-                    d = []
-                    for m in range(len(base_result['compression'].mask)):
-                        d_m = make_d(base_result['compression'].mask[m], k)
-                        d.extend(d_m)
-                    md = make_md(d)
-                    processed_result_exp[metric_name]['exp'][exp_idx] = md
-            for k in base_result['logger']['train'].history:
-                metric_name = k.split('/')[1]
-                if metric_name not in processed_result_history:
-                    processed_result_history[metric_name] = {'history': [None for _ in range(num_experiments)]}
-                processed_result_history[metric_name]['history'][exp_idx] = base_result['logger']['train'].history[k]
+            mask_state_dict = base_result['mask_state_dict']
+            sparsity_index = base_result['sparsity_index']
+            p, q = base_result['cfg']['p'], base_result['cfg']['q']
+            p = [round(x.item(), 1) for x in p]
+            q = [round(x.item(), 1) for x in q]
+            for split in base_result['logger']:
+                for metric_name in base_result['logger'][split].mean:
+                    processed_result[split][metric_name]['mean'][exp_idx] = base_result['logger'][split].mean[
+                        metric_name]
+                for metric_name in base_result['logger'][split].history:
+                    processed_result[split][metric_name]['history'][exp_idx] = base_result['logger'][split].history[
+                        metric_name]
+            processed_result['test']['test/pr-global-global']['history'][exp_idx] = [[] for _ in
+                                                                                     range(len(mask_state_dict))]
+            for name, mask in mask_state_dict[0].items():
+                processed_result['test']['test/pr-neuron-{}'.format(name)]['history'][exp_idx] = []
+                processed_result['test']['test/pr-layer-{}'.format(name)]['history'][exp_idx] = []
+            for name, mask in mask_state_dict[0].items():
+                for iter in range(len(mask_state_dict)):
+                    processed_result['test']['test/pr-neuron-{}'.format(name)]['history'][exp_idx].append(
+                        mask_state_dict[iter][name].float().mean(dim=1))
+                    processed_result['test']['test/pr-layer-{}'.format(name)]['history'][exp_idx].append(
+                        mask_state_dict[iter][name].float().mean())
+                    processed_result['test']['test/pr-global-global']['history'][exp_idx][iter].append(
+                        mask_state_dict[iter][name].view(-1))
+                processed_result['test']['test/pr-neuron-{}'.format(name)]['history'][exp_idx] = torch.stack(
+                    processed_result['test']['test/pr-neuron-{}'.format(name)]['history'][exp_idx], dim=0).numpy()
+                processed_result['test']['test/pr-layer-{}'.format(name)]['history'][exp_idx] = torch.stack(
+                    processed_result['test']['test/pr-layer-{}'.format(name)]['history'][exp_idx], dim=0).numpy()
+            for iter in range(len(mask_state_dict)):
+                processed_result['test']['test/pr-global-global']['history'][exp_idx][iter] = torch.cat(
+                    processed_result['test']['test/pr-global-global']['history'][exp_idx][iter], dim=0).float().mean()
+            processed_result['test']['test/pr-global-global']['history'][exp_idx] = torch.stack(
+                processed_result['test']['test/pr-global-global']['history'][exp_idx], dim=0).numpy()
+
+            for prune_scope in sparsity_index.gini:
+                for name in sparsity_index.gini[prune_scope][0]:
+                    metric_name = 'test/gini-{}-{}'.format(prune_scope, name)
+                    processed_result['test'][metric_name]['history'][exp_idx] = []
+                    for iter in range(len(sparsity_index.gini[prune_scope])):
+                        processed_result['test'][metric_name][
+                            'history'][exp_idx].append(sparsity_index.gini[prune_scope][iter][name])
+                    processed_result['test'][metric_name]['history'][exp_idx] = np.stack(
+                        processed_result['test'][metric_name]['history'][exp_idx], axis=0)
+
+            processed_result['test']['test/p']['history'][exp_idx] = p
+            processed_result['test']['test/q']['history'][exp_idx] = q
+            for prune_scope in sparsity_index.si:
+                for name in sparsity_index.si[prune_scope][0]:
+                    for i in range(len(p)):
+                        for j in range(len(q)):
+                            metric_name = 'test/si-{}-{}-{}-{}'.format(prune_scope, name, p[i], q[j])
+                            processed_result['test'][metric_name]['history'][exp_idx] = []
+                            for iter in range(len(sparsity_index.si[prune_scope])):
+                                processed_result['test'][metric_name]['history'][
+                                    exp_idx].append(sparsity_index.si[prune_scope][iter][name][i, j])
+                            processed_result['test'][metric_name]['history'][exp_idx] = np.stack(
+                                processed_result['test'][metric_name]['history'][exp_idx], axis=0)
+            for prune_scope in sparsity_index.gini:
+                for name in sparsity_index.gini[prune_scope][0]:
+                    metric_name = 'test/gini-{}-{}'.format(prune_scope, name)
+                    processed_result['test'][metric_name]['history'][exp_idx] = []
+                    for iter in range(len(sparsity_index.gini[prune_scope])):
+                        processed_result['test'][metric_name][
+                            'history'][exp_idx].append(sparsity_index.gini[prune_scope][iter][name])
+                    processed_result['test'][metric_name]['history'][exp_idx] = np.stack(
+                        processed_result['test'][metric_name]['history'][exp_idx], axis=0)
         else:
             print('Missing {}'.format(base_result_path_i))
     else:
-        if control[1] not in processed_result_exp:
-            processed_result_exp[control[1]] = {}
-            processed_result_history[control[1]] = {}
-        extract_result([control[0]] + control[2:], model_tag, processed_result_exp[control[1]],
-                       processed_result_history[control[1]])
+        gather_result([control[0]] + control[2:], model_tag, processed_result[control[1]])
     return
 
 
-def summarize_result(processed_result):
-    if 'exp' in processed_result:
-        pivot = 'exp'
-        processed_result[pivot] = np.stack(processed_result[pivot], axis=0)
-        processed_result['mean'] = np.mean(processed_result[pivot], axis=0)
-        processed_result['std'] = np.std(processed_result[pivot], axis=0)
-        processed_result['max'] = np.max(processed_result[pivot], axis=0)
-        processed_result['min'] = np.min(processed_result[pivot], axis=0)
-        processed_result['argmax'] = np.argmax(processed_result[pivot], axis=0)
-        processed_result['argmin'] = np.argmin(processed_result[pivot], axis=0)
-        processed_result[pivot] = processed_result[pivot].tolist()
-    elif 'history' in processed_result:
-        pivot = 'history'
-        processed_result[pivot] = np.stack(processed_result[pivot], axis=0)
-        processed_result['mean'] = np.mean(processed_result[pivot], axis=0)
-        processed_result['std'] = np.std(processed_result[pivot], axis=0)
-        processed_result['max'] = np.max(processed_result[pivot], axis=0)
-        processed_result['min'] = np.min(processed_result[pivot], axis=0)
-        processed_result['argmax'] = np.argmax(processed_result[pivot], axis=0)
-        processed_result['argmin'] = np.argmin(processed_result[pivot], axis=0)
-        processed_result[pivot] = processed_result[pivot].tolist()
+def summarize_result(key, value):
+    if key in ['mean', 'history']:
+        value['summary']['value'] = np.stack(list(value.values()), axis=0)
+        value['summary']['mean'] = np.mean(value['summary']['value'], axis=0)
+        value['summary']['std'] = np.std(value['summary']['value'], axis=0)
+        value['summary']['max'] = np.max(value['summary']['value'], axis=0)
+        value['summary']['min'] = np.min(value['summary']['value'], axis=0)
+        value['summary']['argmax'] = np.argmax(value['summary']['value'], axis=0)
+        value['summary']['argmin'] = np.argmin(value['summary']['value'], axis=0)
+        value['summary']['value'] = value['summary']['value'].tolist()
     else:
-        for k, v in processed_result.items():
-            summarize_result(v)
+        for k, v in value.items():
+            summarize_result(k, v)
         return
     return
 
 
-def extract_processed_result(extracted_processed_result, processed_result, control):
-    if 'exp' in processed_result or 'history' in processed_result:
-        exp_name = '_'.join(control[:-1])
-        metric_name = control[-1]
-        if exp_name not in extracted_processed_result:
-            extracted_processed_result[exp_name] = defaultdict()
-        extracted_processed_result[exp_name]['{}_mean'.format(metric_name)] = processed_result['mean']
-        extracted_processed_result[exp_name]['{}_std'.format(metric_name)] = processed_result['std']
+def extract_result(extracted_processed_result, processed_result, control):
+    def extract(split, metric_name, mode):
+        output = False
+        if split == 'test':
+            if metric_name in ['test/Accuracy'] or 'test/si' in metric_name or 'test/gini' in \
+                    metric_name or 'test/pr' in metric_name:
+                if mode == 'history':
+                    output = True
+        return output
+
+    if 'summary' in processed_result:
+        control_name, split, metric_name, mode = control
+        if not extract(split, metric_name, mode):
+            return
+        stats = ['mean', 'std']
+        for stat in stats:
+            exp_name = '_'.join([control_name, metric_name.split('/')[1], stat])
+            extracted_processed_result[mode][exp_name] = processed_result['summary'][stat]
     else:
         for k, v in processed_result.items():
-            extract_processed_result(extracted_processed_result, v, control + [k])
+            extract_result(extracted_processed_result, v, control + [k])
     return
 
 
-def make_df_result(extracted_processed_result, mode_name):
+def make_df(processed_result, mode):
+    def filter(exp_name_list):
+        metric_name = exp_name_list[-2]
+        output = False
+        if 'Accuracy' in metric_name or 'si-global' in metric_name or 'gini-global' in metric_name or \
+                'pr-global' in metric_name or 'pr-layer' in metric_name:
+            output = True
+        return output
+
     df = defaultdict(list)
-    for exp_name in extracted_processed_result:
-        for k in extracted_processed_result[exp_name]:
-            df_name = '{}_{}'.format(exp_name, k)
-            index_name = [0]
-            df[df_name].append(
-                pd.DataFrame(data=extracted_processed_result[exp_name][k].reshape(1, -1), index=index_name))
+    for exp_name in processed_result[mode]:
+        exp_name_list = exp_name.split('_')
+        if not filter(exp_name_list):
+            continue
+        df_name = '_'.join([*exp_name_list])
+        index_name = [1]
+        df[df_name].append(pd.DataFrame(data=processed_result[mode][exp_name].reshape(1, -1), index=index_name))
     startrow = 0
-    writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode_name), engine='xlsxwriter')
+    writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode), engine='xlsxwriter')
     for df_name in df:
         df[df_name] = pd.concat(df[df_name])
         df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
@@ -280,565 +299,794 @@ def make_df_result(extracted_processed_result, mode_name):
     return df
 
 
-def make_vis_by_layer(df, y_name):
-    mode = ['teacher', 'once', 'lt', 'si']
-    data_all = [['MNIST'], ['FashionMNIST'], ['CIFAR10'], ['SVHN']]
-    for i in range(len(data_all)):
-        data = data_all[i]
-        color_dict = {'1': 'red', '2': 'orange', '3': 'blue', '4': 'cyan', '5': 'green'}
-        linestyle_dict = {'1': '-', '2': '--', '3': '-.', '4': ':', '5': (0, (1, 10))}
-        y_name_dict = {'SI': 'Sparsity Index', 'SIe': 'Sparsity Index'}
-        label_loc_dict = {'SI': 'upper left', 'SIe': 'upper left', 'CR': 'upper right'}
-        marker_dict = {'1': 'o', '2': 's', '3': 'p', '4': '*', '5': 'h'}
-        fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (10, 4)
-        capsize = 3
-        capthick = 3
-        controls = []
-        for mode_i in mode:
-            for data_i in data:
-                controls += make_control_list(mode_i, data_i, 'mlp')
-        for i in range(len(controls)):
-            controls[i] = controls[i][1]
-        fig = {}
-        AX1, AX2 = {}, {}
-        for df_name in df:
-            df_name_list = df_name.split('_')
-            df_name_control_name = '_'.join(df_name_list[:-2])
-            metric_name, stats = df_name_list[-2:]
-            metric_mode = metric_name.split('-')[0]
-            if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
-                    'global' in df_name_control_name and 'layer' in metric_name and \
-                    y_name in metric_mode and stats == 'mean':
-                prune_iters = df_name_list[-5]
-                _, type, q = df_name_list[-2].split('-')
-                df_name_y = df_name
-                df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
-                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-{}'.format(type), stats])
-                df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-{}'.format(type), 'std'])
-                y = df[df_name_y].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
-                y_std = df[df_name_y_std].iloc[0].to_numpy()
-                cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
-                teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
-                teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
-                teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                y = np.concatenate([teacher_y, y], axis=0)
-                y_std = np.concatenate([teacher_y_std, y_std], axis=0)
-                y = y.reshape((int(prune_iters) + 1, -1))
-                cr = cr.reshape((int(prune_iters) + 1, -1))
-                y_std = y_std.reshape((int(prune_iters) + 1, -1))
-                cr_std = cr_std.reshape((int(prune_iters) + 1, -1))
-                for j in range(y.shape[-1]):
-                    fig_name = '_'.join([*df_name_list[:5], type, q, metric_mode])
-                    fig[fig_name] = plt.figure(fig_name, figsize=figsize)
-                    if fig_name not in AX1:
-                        AX1[fig_name] = fig[fig_name].add_subplot(121)
-                        AX2[fig_name] = fig[fig_name].add_subplot(122)
-                    ax1 = AX1[fig_name]
-                    ax2 = AX2[fig_name]
-                    label = str(j + 1)
-                    x = np.arange(int(prune_iters) + 1)
-                    y_j = y[:, j]
-                    y_std_j = y_std[:, j]
-                    ax1.errorbar(x, y_j, yerr=y_std_j, color=color_dict[label], linestyle=linestyle_dict[label],
-                                 label='$\ell={}$'.format(label), marker=marker_dict[label],
-                                 capsize=capsize, capthick=capthick)
-                    ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
-                    ax1.set_ylabel(y_name_dict[y_name], fontsize=fontsize['label'])
-                    ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                    ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                    ax1.legend(loc=label_loc_dict[y_name], fontsize=fontsize['legend'])
-                    z = cr[:, j]
-                    z_std = cr_std[:, j]
-                    ax2.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                                 label='$\ell={}$'.format(label), marker=marker_dict[label],
-                                 capsize=capsize, capthick=capthick)
-                    ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
-                    ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
-                    ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                    ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-        for fig_name in fig:
-            fig[fig_name] = plt.figure(fig_name)
-            AX1[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX2[fig_name].grid(linestyle='--', linewidth='0.5')
-            fig[fig_name].tight_layout()
-            control = fig_name.split('_')
-            dir_path = os.path.join(vis_path, y_name, 'layer', *control[:-1])
-            fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
-            makedir_exist_ok(dir_path)
-            plt.savefig(fig_path, dpi=500, bbox_inches='tight', pad_inches=0)
-            plt.close(fig_name)
+def make_vis_by_prune(df_history):
+    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($p=0.5$, $q=1.0$)',
+                  'si-1-2-0-1': 'Sparse Index ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
+                  'os-0.2': 'One Shot ($P=0.2$)'}
+    color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
+    linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
+    marker_dict = {'si-0.5-1-0-1': 'o', 'si-1-2-0-1': 's', 'lt-0.2': 'p', 'os-0.2': 'D'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    capsize = 0
+    capthick = None
+    pivot_p = '0.5'
+    pivot_q = '1.0'
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        elif prune_mode_list[0] in ['lt', 'os']:
+            pivot_ = ['lt-0.2', 'os-0.2']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
+
+            df_name_y = '_'.join([*df_name_list[:-1], stat])
+            df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
+            df_name_pr = '_'.join([*df_name_list[:-2], 'pr-global-global', stat])
+            df_name_pr_std = '_'.join([*df_name_list[:-2], 'pr-global-global', 'std'])
+            df_name_si = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), stat])
+            df_name_si_std = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), 'std'])
+            df_name_gini = '_'.join([*df_name_list[:-2], 'gini-global-global', stat])
+            df_name_gini_std = '_'.join([*df_name_list[:-2], 'gini-global-global', 'std'])
+
+            y = df_history[df_name_y].iloc[0].to_numpy()
+            y_std = df_history[df_name_y_std].iloc[0].to_numpy()
+            pr = df_history[df_name_pr].iloc[0].to_numpy()
+            pr_std = df_history[df_name_pr_std].iloc[0].to_numpy()
+            si = df_history[df_name_si].iloc[0].to_numpy()
+            si_std = df_history[df_name_si_std].iloc[0].to_numpy()
+            gini = df_history[df_name_gini].iloc[0].to_numpy()
+            gini_std = df_history[df_name_gini_std].iloc[0].to_numpy()
+
+            x = np.arange(len(y))
+
+            xlabel = 'Iteration (T)'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.legend(loc=loc_dict[ylabel], fontsize=fontsize['legend'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Gini Index'
+            ax_4.errorbar(x, gini, yerr=gini_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_4[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'prune'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
     return
 
 
-def make_vis_by_prune(df, y_name):
-    mode = ['teacher', 'once', 'lt', 'si']
-    data_all = [['MNIST'], ['FashionMNIST'], ['CIFAR10'], ['SVHN']]
-    for i in range(len(data_all)):
-        data = data_all[i]
-        color_dict = {'once': 'red', 'lt': 'orange', 'si': 'blue'}
-        linestyle_dict = {'once': '-', 'lt': '--', 'si': '-.'}
-        label_dict = {'once': 'One Shot', 'lt': 'Lottery Ticket', 'si': 'Sparse Index'}
-        marker_dict = {'once': 'o', 'lt': 's', 'si': 'p'}
-        label_loc_dict = {'Accuracy': 'lower left', 'Loss': 'upper left', 'Loss-Teacher': 'upper left',
-                          'CR': 'upper right', 'Sie': 'upper left'}
-        fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (20, 4)
-        capsize = 3
-        capthick = 3
-        controls = []
-        for mode_i in mode:
-            for data_i in data:
-                controls += make_control_list(mode_i, data_i, 'mlp')
-        for i in range(len(controls)):
-            controls[i] = controls[i][1]
-        fig = {}
-        AX1, AX2, AX3, AX4 = {}, {}, {}, {}
-        for df_name in df:
-            df_name_list = df_name.split('_')
-            df_name_control_name = '_'.join(df_name_list[:-2])
-            metric_name, stats = df_name_list[-2:]
-            if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
-                    y_name in metric_name and stats == 'mean':
-                prune_mode, type = df_name_list[-3].split('-')
-                df_name_y = df_name
-                df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
-                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
-                df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
-                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
-                df_name_md = '_'.join([*df_name_list[:-2], 'MD-global', stats])
-                df_name_md_std = '_'.join([*df_name_list[:-2], 'MD-global', 'std'])
-                y = df[df_name_y].iloc[0].to_numpy()
-                y_std = df[df_name_y_std].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
-                cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                sie = df[df_name_sie].iloc[0].to_numpy()
-                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
-                md = df[df_name_md].iloc[0].to_numpy()
-                md_std = df[df_name_md_std].iloc[0].to_numpy()
-                teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
-                teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
-                teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
-                teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-0.5', stats])
-                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-0.5', 'std'])
-                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
-                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
-                y = np.concatenate([teacher_y, y], axis=0)
-                y_std = np.concatenate([teacher_y_std, y_std], axis=0)
-                sie = np.concatenate([teacher_sie, sie], axis=0)
-                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
-                fig_name = '_'.join([*df_name_list[:3], type, metric_name])
-                fig[fig_name] = plt.figure(fig_name, figsize=figsize)
-                if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(141)
-                    AX2[fig_name] = fig[fig_name].add_subplot(142)
-                    AX3[fig_name] = fig[fig_name].add_subplot(143)
-                    AX4[fig_name] = fig[fig_name].add_subplot(144)
-                ax1 = AX1[fig_name]
-                ax2 = AX2[fig_name]
-                ax3 = AX3[fig_name]
-                ax4 = AX4[fig_name]
-                label = prune_mode
-                x = np.arange(len(y))
-                ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label=label_dict[label], marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax1.set_ylabel(y_name, fontsize=fontsize['label'])
-                ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = cr
-                z_std = cr_std
-                ax2.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label=label_dict[label], marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
-                ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax2.legend(loc=label_loc_dict['CR'], fontsize=fontsize['legend'])
-                z = sie
-                z_std = sie_std
-                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label=label_dict[label], marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
-                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = md
-                z_std = md_std
-                ax4.errorbar(np.arange(1, len(z) + 1), z, yerr=z_std, color=color_dict[label],
-                             linestyle=linestyle_dict[label], label=label_dict[label], marker=marker_dict[label],
-                             capsize=capsize, capthick=capthick)
-                ax4.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax4.set_ylabel('$\\frac{m}{d}$', fontsize=fontsize['label'])
-                ax4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-        for fig_name in fig:
-            fig[fig_name] = plt.figure(fig_name)
-            AX1[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX2[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX4[fig_name].grid(linestyle='--', linewidth='0.5')
-            fig[fig_name].tight_layout()
-            control = fig_name.split('_')
-            dir_path = os.path.join(vis_path, y_name, 'prune', *control[:-1])
-            fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
-            makedir_exist_ok(dir_path)
-            plt.savefig(fig_path, dpi=500, bbox_inches='tight', pad_inches=0)
-            plt.close(fig_name)
+def make_vis_by_p(df_history):
+    label_dict = {'si-0.2-1-0-1': 'Sparse Index ($p=0.2$)', 'si-0.4-1-0-1': 'Sparse Index ($p=0.4$)',
+                  'si-0.5-1-0-1': 'Sparse Index ($p=0.5$)', 'si-0.6-1-0-1': 'Sparse Index ($p=0.6$)',
+                  'si-0.8-1-0-1': 'Sparse Index ($p=0.8$)'}
+    color_dict = {'si-0.2-1-0-1': 'red', 'si-0.4-1-0-1': 'orange', 'si-0.5-1-0-1': 'blue',
+                  'si-0.6-1-0-1': 'cyan', 'si-0.8-1-0-1': 'black'}
+    linestyle_dict = {'si-0.2-1-0-1': '-', 'si-0.4-1-0-1': '--', 'si-0.5-1-0-1': '-.', 'si-0.6-1-0-1': ':',
+                      'si-0.8-1-0-1': (0, (1, 10))}
+    marker_dict = {'si-0.2-1-0-1': 'o', 'si-0.4-1-0-1': 's', 'si-0.5-1-0-1': 'p', 'si-0.6-1-0-1': 'D',
+                   'si-0.8-1-0-1': 'H'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    capsize = 0
+    capthick = None
+    pivot_p = '0.5'
+    pivot_q = '1.0'
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.5-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
+
+            df_name_y = '_'.join([*df_name_list[:-1], stat])
+            df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
+            df_name_pr = '_'.join([*df_name_list[:-2], 'pr-global-global', stat])
+            df_name_pr_std = '_'.join([*df_name_list[:-2], 'pr-global-global', 'std'])
+            df_name_si = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), stat])
+            df_name_si_std = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), 'std'])
+            df_name_gini = '_'.join([*df_name_list[:-2], 'gini-global-global', stat])
+            df_name_gini_std = '_'.join([*df_name_list[:-2], 'gini-global-global', 'std'])
+
+            y = df_history[df_name_y].iloc[0].to_numpy()
+            y_std = df_history[df_name_y_std].iloc[0].to_numpy()
+            pr = df_history[df_name_pr].iloc[0].to_numpy()
+            pr_std = df_history[df_name_pr_std].iloc[0].to_numpy()
+            si = df_history[df_name_si].iloc[0].to_numpy()
+            si_std = df_history[df_name_si_std].iloc[0].to_numpy()
+            gini = df_history[df_name_gini].iloc[0].to_numpy()
+            gini_std = df_history[df_name_gini_std].iloc[0].to_numpy()
+
+            x = np.arange(len(y))
+
+            xlabel = 'Iteration (T)'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.legend(loc=loc_dict[ylabel], fontsize=fontsize['legend'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Gini Index'
+            ax_4.errorbar(x, gini, yerr=gini_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        handles, labels = ax_dict_1[fig_name].get_legend_handles_labels()
+        handles = [*handles[1:], handles[0]]
+        labels = [*labels[1:], labels[0]]
+        ax_dict_1[fig_name].legend(handles, labels, loc=loc_dict['Accuracy'], fontsize=fontsize['legend'])
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_4[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'p'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
     return
 
 
-def make_vis_by_si_q(df, y_name):
-    mode = ['teacher', 'si', 'si-q']
-    data_all = [['MNIST'], ['CIFAR10']]
-    for i in range(len(data_all)):
-        data = data_all[i]
-        color_dict = {'0.2': 'red', '0.4': 'orange', '0.5': 'black', '0.6': 'blue', '0.8': 'cyan'}
-        linestyle_dict = {'0.2': '-', '0.4': '--', '0.5': '-.', '0.6': ':', '0.8': (0, (1, 10))}
-        marker_dict = {'0.2': 'o', '0.4': 's', '0.5': 'p', '0.6': 'D', '0.8': 'H'}
-        label_loc_dict = {'Accuracy': 'lower left', 'Loss': 'upper left', 'Loss-Teacher': 'upper left',
-                          'CR': 'upper right', 'Sie': 'upper left'}
-        fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (20, 4)
-        capsize = 3
-        capthick = 3
-        controls = []
-        for mode_i in mode:
-            for data_i in data:
-                controls += make_control_list(mode_i, data_i, 'mlp')
-        for i in range(len(controls)):
-            controls[i] = controls[i][1]
-        fig = {}
-        AX1, AX2, AX3, AX4 = {}, {}, {}, {}
-        for df_name in df:
-            df_name_list = df_name.split('_')
-            df_name_control_name = '_'.join(df_name_list[:-2])
-            metric_name, stats = df_name_list[-2:]
-            if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
-                    y_name in metric_name and stats == 'mean':
-                _, q, eta_m = df_name_list[-4].split('-')
-                prune_mode, type = df_name_list[-3].split('-')
-                df_name_y = df_name
-                df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
-                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
-                df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
-                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
-                df_name_md = '_'.join([*df_name_list[:-2], 'MD-global', stats])
-                df_name_md_std = '_'.join([*df_name_list[:-2], 'MD-global', 'std'])
-                y = df[df_name_y].iloc[0].to_numpy()
-                y_std = df[df_name_y_std].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
-                cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                sie = df[df_name_sie].iloc[0].to_numpy()
-                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
-                md = df[df_name_md].iloc[0].to_numpy()
-                md_std = df[df_name_md_std].iloc[0].to_numpy()
-                teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
-                teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
-                teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
-                teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-0.5', stats])
-                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-0.5', 'std'])
-                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
-                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
-                y = np.concatenate([teacher_y, y], axis=0)
-                y_std = np.concatenate([teacher_y_std, y_std], axis=0)
-                sie = np.concatenate([teacher_sie, sie], axis=0)
-                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
-                fig_name = '_'.join([*df_name_list[:3], type, metric_name])
-                fig[fig_name] = plt.figure(fig_name, figsize=figsize)
-                if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(141)
-                    AX2[fig_name] = fig[fig_name].add_subplot(142)
-                    AX3[fig_name] = fig[fig_name].add_subplot(143)
-                    AX4[fig_name] = fig[fig_name].add_subplot(144)
-                ax1 = AX1[fig_name]
-                ax2 = AX2[fig_name]
-                ax3 = AX3[fig_name]
-                ax4 = AX4[fig_name]
-                label = q
-                x = np.arange(len(y))
-                ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label='$q={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax1.set_ylabel(y_name, fontsize=fontsize['label'])
-                ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = cr
-                z_std = cr_std
-                ax2.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label='$q={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
-                ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = sie
-                z_std = sie_std
-                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             label='$q={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
-                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = md
-                z_std = md_std
-                ax4.errorbar(np.arange(1, len(z) + 1), z, yerr=z_std, color=color_dict[label],
-                             linestyle=linestyle_dict[label], label='$q={}$'.format(label), marker=marker_dict[label],
-                             capsize=capsize, capthick=capthick)
-                ax4.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax4.set_ylabel('$\\frac{m}{d}$', fontsize=fontsize['label'])
-                ax4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-        for fig_name in fig:
-            fig[fig_name] = plt.figure(fig_name)
-            AX1[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX2[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX4[fig_name].grid(linestyle='--', linewidth='0.5')
-            handles, labels = AX2[fig_name].get_legend_handles_labels()
-            if len(handles) > 1:
-                AX2[fig_name].legend([handles[1], handles[2], handles[0], handles[3], handles[4]],
-                                     [labels[1], labels[2], labels[0], labels[3], labels[4]], loc=label_loc_dict['CR'],
-                                     fontsize=fontsize['legend'])
-            fig[fig_name].tight_layout()
-            control = fig_name.split('_')
-            dir_path = os.path.join(vis_path, y_name, 'si_q', *control[:-1])
-            fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
-            makedir_exist_ok(dir_path)
-            plt.savefig(fig_path, dpi=500, bbox_inches='tight', pad_inches=0)
-            plt.close(fig_name)
+def make_vis_by_q(df_history):
+    label_dict = {'si-1-1.2-0-1': 'Sparse Index ($q=1.2$)', 'si-1-1.4-0-1': 'Sparse Index ($q=1.4$)',
+                  'si-1-1.6-0-1': 'Sparse Index ($q=1.6$)', 'si-1-1.8-0-1': 'Sparse Index ($q=1.8$)',
+                  'si-1-2-0-1': 'Sparse Index ($q=2.0$)'}
+    color_dict = {'si-1-1.2-0-1': 'red', 'si-1-1.4-0-1': 'orange', 'si-1-1.6-0-1': 'blue',
+                  'si-1-1.8-0-1': 'cyan', 'si-1-2-0-1': 'black'}
+    linestyle_dict = {'si-1-1.2-0-1': '-', 'si-1-1.4-0-1': '--', 'si-1-1.6-0-1': '-.', 'si-1-1.8-0-1': ':',
+                      'si-1-2-0-1': (0, (1, 10))}
+    marker_dict = {'si-1-1.2-0-1': 'o', 'si-1-1.4-0-1': 's', 'si-1-1.6-0-1': 'p', 'si-1-1.8-0-1': 'D',
+                   'si-1-2-0-1': 'H'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    capsize = 0
+    capthick = None
+    pivot_p = '0.5'
+    pivot_q = '1.0'
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1', 'si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
+
+            df_name_y = '_'.join([*df_name_list[:-1], stat])
+            df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
+            df_name_pr = '_'.join([*df_name_list[:-2], 'pr-global-global', stat])
+            df_name_pr_std = '_'.join([*df_name_list[:-2], 'pr-global-global', 'std'])
+            df_name_si = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), stat])
+            df_name_si_std = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), 'std'])
+            df_name_gini = '_'.join([*df_name_list[:-2], 'gini-global-global', stat])
+            df_name_gini_std = '_'.join([*df_name_list[:-2], 'gini-global-global', 'std'])
+
+            y = df_history[df_name_y].iloc[0].to_numpy()
+            y_std = df_history[df_name_y_std].iloc[0].to_numpy()
+            pr = df_history[df_name_pr].iloc[0].to_numpy()
+            pr_std = df_history[df_name_pr_std].iloc[0].to_numpy()
+            si = df_history[df_name_si].iloc[0].to_numpy()
+            si_std = df_history[df_name_si_std].iloc[0].to_numpy()
+            gini = df_history[df_name_gini].iloc[0].to_numpy()
+            gini_std = df_history[df_name_gini_std].iloc[0].to_numpy()
+
+            x = np.arange(len(y))
+
+            xlabel = 'Iteration (T)'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Gini Index'
+            ax_4.errorbar(x, gini, yerr=gini_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        handles, labels = ax_dict_1[fig_name].get_legend_handles_labels()
+        handles = [*handles[1:3], handles[0], *handles[3:]]
+        labels = [*labels[1:3], labels[0], *labels[3:]]
+        ax_dict_1[fig_name].legend(handles, labels, loc=loc_dict['Accuracy'], fontsize=fontsize['legend'])
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_4[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'q'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
     return
 
 
-def make_vis_by_si_eta(df, y_name):
-    mode = ['teacher', 'si', 'si-eta']
-    # mode = ['teacher', 'si-eta']
-    data_all = [['MNIST'], ['CIFAR10']]
-    for i in range(len(data_all)):
-        data = data_all[i]
-        # color_dict = {'0': 'black', '0.01': 'red', '0.1': 'orange', '1': 'blue', '10': 'cyan'}
-        # linestyle_dict = {'0': '-', '0.01': '--', '0.1': '-.', '1': ':', '10': (0, (1, 10))}
-        # marker_dict = {'0': 'o', '0.01': 's', '0.1': 'p', '1': 'D', '10': 'H'}
+def make_vis_by_eta_m(df_history):
+    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($\eta_m=0.0$)', 'si-0.5-1-0.001-1': 'Sparse Index ($\eta_m=0.001$)',
+                  'si-0.5-1-0.01-1': 'Sparse Index ($\eta_m=0.01$)', 'si-0.5-1-0.1-1': 'Sparse Index ($\eta_m=0.1$)',
+                  'si-0.5-1-1-1': 'Sparse Index ($\eta_m=1.0$)'}
+    color_dict = {'si-0.5-1-0-1': 'red', 'si-0.5-1-0.001-1': 'orange', 'si-0.5-1-0.01-1': 'blue',
+                  'si-0.5-1-0.1-1': 'cyan', 'si-0.5-1-1-1': 'black'}
+    linestyle_dict = {'si-0.5-1-0-1': '-', 'si-0.5-1-0.001-1': '--', 'si-0.5-1-0.01-1': '-.', 'si-0.5-1-0.1-1': ':',
+                      'si-0.5-1-1-1': (0, (1, 10))}
+    marker_dict = {'si-0.5-1-0-1': 'o', 'si-0.5-1-0.001-1': 's', 'si-0.5-1-0.01-1': 'p', 'si-0.5-1-0.1-1': 'D',
+                   'si-0.5-1-1-1': 'H'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    capsize = 0
+    capthick = None
+    pivot_p = '0.5'
+    pivot_q = '1.0'
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-0.5-1-0.001-1', 'si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
 
-        color_dict = {'1': 'black', '3': 'red', '5': 'orange', '7': 'blue', '9': 'cyan'}
-        linestyle_dict = {'1': '-', '3': '--', '5': '-.', '7': ':', '9': (0, (1, 10))}
-        marker_dict = {'1': 'o', '3': 's', '5': 'p', '7': 'D', '9': 'H'}
+            df_name_y = '_'.join([*df_name_list[:-1], stat])
+            df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
+            df_name_pr = '_'.join([*df_name_list[:-2], 'pr-global-global', stat])
+            df_name_pr_std = '_'.join([*df_name_list[:-2], 'pr-global-global', 'std'])
+            df_name_si = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), stat])
+            df_name_si_std = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), 'std'])
+            df_name_gini = '_'.join([*df_name_list[:-2], 'gini-global-global', stat])
+            df_name_gini_std = '_'.join([*df_name_list[:-2], 'gini-global-global', 'std'])
 
-        label_loc_dict = {'Accuracy': 'lower left', 'Loss': 'upper left', 'Loss-Teacher': 'upper left',
-                          'CR': 'upper right', 'Sie': 'upper left'}
-        fontsize = {'legend': 16, 'label': 16, 'ticks': 16}
-        figsize = (20, 4)
-        capsize = 3
-        capthick = 3
-        controls = []
-        for mode_i in mode:
-            for data_i in data:
-                controls += make_control_list(mode_i, data_i, 'mlp')
-        for i in range(len(controls)):
-            controls[i] = controls[i][1]
-        fig = {}
-        AX1, AX2, AX3, AX4 = {}, {}, {}, {}
-        for df_name in df:
-            df_name_list = df_name.split('_')
-            df_name_control_name = '_'.join(df_name_list[:-2])
-            metric_name, stats = df_name_list[-2:]
-            if df_name_control_name in controls and len(df_name_list[:-2]) == 5 and \
-                    y_name in metric_name and stats == 'mean':
-                _, q, eta_m = df_name_list[-4].split('-')
-                # prune_iters = df_name_list[-5]
-                # num_layers = int(df_name_list[-6].split('-')[3]) + 1
-                prune_mode, type = df_name_list[-3].split('-')
-                df_name_y = df_name
-                df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
-                df_name_cr = '_'.join([*df_name_list[:-2], 'CR-global', stats])
-                df_name_cr_std = '_'.join([*df_name_list[:-2], 'CR-global', 'std'])
-                df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', stats])
-                df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-global-0.5', 'std'])
-                # df_name_sie = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', stats])
-                # df_name_sie_std = '_'.join([*df_name_list[:-2], 'SIe-neuron-0.5', 'std'])
-                df_name_md = '_'.join([*df_name_list[:-2], 'MD-global', stats])
-                df_name_md_std = '_'.join([*df_name_list[:-2], 'MD-global', 'std'])
-                y = df[df_name_y].iloc[0].to_numpy()
-                y_std = df[df_name_y_std].iloc[0].to_numpy()
-                cr = df[df_name_cr].iloc[0].to_numpy()
-                cr_std = df[df_name_cr_std].iloc[0].to_numpy()
-                sie = df[df_name_sie].iloc[0].to_numpy()
-                sie_std = df[df_name_sie_std].iloc[0].to_numpy()
-                md = df[df_name_md].iloc[0].to_numpy()
-                md_std = df[df_name_md_std].iloc[0].to_numpy()
-                teacher_df_name_y = '_'.join([*df_name_list[:2], *df_name_list[-2:]])
-                teacher_df_name_y_std = '_'.join([*df_name_list[:2], df_name_list[-2], 'std'])
-                teacher_y = df[teacher_df_name_y].iloc[0].to_numpy()
-                teacher_y_std = df[teacher_df_name_y_std].iloc[0].to_numpy()
-                teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-global-0.5', stats])
-                teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-global-0.5', 'std'])
-                # teacher_df_name_sie = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', stats])
-                # teacher_df_name_sie_std = '_'.join([*df_name_list[:2], 'SIe-neuron-0.5', 'std'])
-                teacher_sie = df[teacher_df_name_sie].iloc[0].to_numpy()
-                teacher_sie_std = df[teacher_df_name_sie_std].iloc[0].to_numpy()
-                y = np.concatenate([teacher_y, y], axis=0)
-                y_std = np.concatenate([teacher_y_std, y_std], axis=0)
-                sie = np.concatenate([teacher_sie, sie], axis=0)
-                sie_std = np.concatenate([teacher_sie_std, sie_std], axis=0)
-                # sie = sie.reshape((int(prune_iters) + 1, -1)).mean(axis=-1)
-                # sie_std = sie_std.reshape((int(prune_iters) + 1, -1)).mean(axis=-1)
-                # sie = sie.reshape((-1, num_layers)).mean(axis=-1)
-                # sie_std = sie_std.reshape((-1, num_layers)).mean(axis=-1)
-                fig_name = '_'.join([*df_name_list[:3], type, metric_name])
-                fig[fig_name] = plt.figure(fig_name, figsize=figsize)
-                if fig_name not in AX1:
-                    AX1[fig_name] = fig[fig_name].add_subplot(141)
-                    AX2[fig_name] = fig[fig_name].add_subplot(142)
-                    AX3[fig_name] = fig[fig_name].add_subplot(143)
-                    AX4[fig_name] = fig[fig_name].add_subplot(144)
-                ax1 = AX1[fig_name]
-                ax2 = AX2[fig_name]
-                ax3 = AX3[fig_name]
-                ax4 = AX4[fig_name]
-                label = eta_m
-                x = np.arange(len(y))
-                ax1.errorbar(x, y, yerr=y_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             # label='$\eta_m={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             label='$c={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax1.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax1.set_ylabel(y_name, fontsize=fontsize['label'])
-                ax1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = cr
-                z_std = cr_std
-                ax2.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             # label='$\eta_m={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             label='$c={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax2.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax2.set_ylabel('Percent of Remaining Weights', fontsize=fontsize['label'])
-                ax2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = sie
-                z_std = sie_std
-                ax3.errorbar(x, z, yerr=z_std, color=color_dict[label], linestyle=linestyle_dict[label],
-                             # label='$\eta_m={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             label='$c={}$'.format(label), marker=marker_dict[label], capsize=capsize,
-                             capthick=capthick)
-                ax3.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax3.set_ylabel('Sparsity Index', fontsize=fontsize['label'])
-                ax3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-                z = md
-                z_std = md_std
-                ax4.errorbar(np.arange(1, len(z) + 1), z, yerr=z_std, color=color_dict[label],
-                             # linestyle=linestyle_dict[label], label='$\eta_m={}$'.format(label),
-                             linestyle=linestyle_dict[label], label='$c={}$'.format(label),
-                             marker=marker_dict[label], capsize=capsize, capthick=capthick)
-                ax4.set_xlabel('Iteration', fontsize=fontsize['label'])
-                ax4.set_ylabel('$\\frac{m}{d}$', fontsize=fontsize['label'])
-                ax4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
-                ax4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-        for fig_name in fig:
-            fig[fig_name] = plt.figure(fig_name)
-            AX1[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX2[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX3[fig_name].grid(linestyle='--', linewidth='0.5')
-            AX4[fig_name].grid(linestyle='--', linewidth='0.5')
-            handles, labels = AX2[fig_name].get_legend_handles_labels()
-            if len(handles) > 1:
-                AX2[fig_name].legend([handles[1], handles[2], handles[0], handles[3], handles[4]],
-                                     [labels[1], labels[2], labels[0], labels[3], labels[4]], loc=label_loc_dict['CR'],
-                                     fontsize=fontsize['legend'])
-            fig[fig_name].tight_layout()
-            control = fig_name.split('_')
-            dir_path = os.path.join(vis_path, y_name, 'si_eta', *control[:-1])
-            fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
-            makedir_exist_ok(dir_path)
-            plt.savefig(fig_path, dpi=500, bbox_inches='tight', pad_inches=0)
-            plt.close(fig_name)
+            y = df_history[df_name_y].iloc[0].to_numpy()
+            y_std = df_history[df_name_y_std].iloc[0].to_numpy()
+            pr = df_history[df_name_pr].iloc[0].to_numpy()
+            pr_std = df_history[df_name_pr_std].iloc[0].to_numpy()
+            si = df_history[df_name_si].iloc[0].to_numpy()
+            si_std = df_history[df_name_si_std].iloc[0].to_numpy()
+            gini = df_history[df_name_gini].iloc[0].to_numpy()
+            gini_std = df_history[df_name_gini_std].iloc[0].to_numpy()
+
+            x = np.arange(len(y))
+
+            xlabel = 'Iteration (T)'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.legend(loc=loc_dict[ylabel], fontsize=fontsize['legend'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Gini Index'
+            ax_4.errorbar(x, gini, yerr=gini_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_4[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'eta_m'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
     return
 
 
-def make_y(input, mode):
-    if mode == 'neuron':
-        y = []
-        for name, param in input.items():
-            if param.isnan().all():
-                y.append(float('nan'))
-            else:
-                y.append(param.nanmean().item())
-    elif mode == 'layer':
-        y = []
-        for name, param in input.items():
-            y.append(param)
-    elif mode == 'global':
-        y = [input]
-    else:
-        raise ValueError('Not valid mode')
-    return y
+def make_vis_by_gamma(df_history):
+    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($\gamma=1.0$)', 'si-0.5-1-0-3': 'Sparse Index ($\gamma=3.0$)',
+                  'si-0.5-1-0-5': 'Sparse Index ($\gamma=5.0$)', 'si-0.5-1-0-7': 'Sparse Index ($\gamma=7.0$)',
+                  'si-0.5-1-0-9': 'Sparse Index ($\gamma=9.0$)'}
+    color_dict = {'si-0.5-1-0-1': 'red', 'si-0.5-1-0-3': 'orange', 'si-0.5-1-0-5': 'blue',
+                  'si-0.5-1-0-7': 'cyan', 'si-0.5-1-0-9': 'black'}
+    linestyle_dict = {'si-0.5-1-0-1': '-', 'si-0.5-1-0-3': '--', 'si-0.5-1-0-5': '-.', 'si-0.5-1-0-7': ':',
+                      'si-0.5-1-0-9': (0, (1, 10))}
+    marker_dict = {'si-0.5-1-0-1': 'o', 'si-0.5-1-0-3': 's', 'si-0.5-1-0-5': 'p', 'si-0.5-1-0-7': 'D',
+                   'si-0.5-1-0-9': 'H'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    capsize = 0
+    capthick = None
+    pivot_p = '0.5'
+    pivot_q = '1.0'
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-0.5-1-0-3', 'si-0.5-1-0-5', 'si-0.5-1-0-7', 'si-0.5-1-0-9']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
+
+            df_name_y = '_'.join([*df_name_list[:-1], stat])
+            df_name_y_std = '_'.join([*df_name_list[:-1], 'std'])
+            df_name_pr = '_'.join([*df_name_list[:-2], 'pr-global-global', stat])
+            df_name_pr_std = '_'.join([*df_name_list[:-2], 'pr-global-global', 'std'])
+            df_name_si = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), stat])
+            df_name_si_std = '_'.join([*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p, pivot_q), 'std'])
+            df_name_gini = '_'.join([*df_name_list[:-2], 'gini-global-global', stat])
+            df_name_gini_std = '_'.join([*df_name_list[:-2], 'gini-global-global', 'std'])
+
+            y = df_history[df_name_y].iloc[0].to_numpy()
+            y_std = df_history[df_name_y_std].iloc[0].to_numpy()
+            pr = df_history[df_name_pr].iloc[0].to_numpy()
+            pr_std = df_history[df_name_pr_std].iloc[0].to_numpy()
+            si = df_history[df_name_si].iloc[0].to_numpy()
+            si_std = df_history[df_name_si_std].iloc[0].to_numpy()
+            gini = df_history[df_name_gini].iloc[0].to_numpy()
+            gini_std = df_history[df_name_gini_std].iloc[0].to_numpy()
+
+            x = np.arange(len(y))
+
+            xlabel = 'Iteration (T)'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.legend(loc=loc_dict[ylabel], fontsize=fontsize['legend'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+            xlabel = 'Iteration (T)'
+            ylabel = 'Gini Index'
+            ax_4.errorbar(x, gini, yerr=gini_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_4.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_4[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'gamma'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
+    return
 
 
-def make_cr(input, mode):
-    if mode == 'neuron':
-        cr = []
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            cr_i = mask_i.mean().item()
-            cr.append(cr_i)
-    elif mode == 'layer':
-        cr = []
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            cr_i = mask_i.mean().item()
-            cr.append(cr_i)
-    elif mode == 'global':
-        cr = []
-        param_all = []
-        for name, param in input.items():
-            param_all.append(param.view(-1))
-        param_all = torch.cat(param_all, dim=0)
-        mask = param_all.view(-1).float()
-        cr.append(mask.mean().item())
-    else:
-        raise ValueError('Not valid mode')
-    return cr
+def make_vis_by_pq(df_history):
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (20, 4)
+    # pivot_p = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    # pivot_q = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
+    pivot_p = ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0']
+    pivot_q = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0']
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3, ax_dict_4 = {}, {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        elif prune_mode_list[0] in ['lt', 'os']:
+            pivot_ = ['lt-0.2', 'os-0.2']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join(df_name_list)
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(141)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(142)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(143)
+                ax_dict_4[fig_name] = fig[fig_name].add_subplot(144)
+            ax_1, ax_2, ax_3, ax_4 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name], ax_dict_4[fig_name]
+
+            si = []
+            for i in range(len(pivot_p)):
+                for j in range(len(pivot_q)):
+                    df_name_si = '_'.join(
+                        [*df_name_list[:-2], 'si-global-global-{}-{}'.format(pivot_p[i], pivot_q[j]), stat])
+                    si.append(df_history[df_name_si].iloc[0].to_numpy())
+            si = np.concatenate(si, axis=0).reshape(len(pivot_p), len(pivot_q), -1).transpose(2, 0, 1)
+            si_ = np.stack([si[0], si[10], si[20], si[30]], axis=0)
+            vmin, vmax = np.min(si_), np.max(si_)
+
+            xlabel = '$q$'
+            ylabel = '$p$'
+            y = si_[0]
+            ax_1.imshow(y, vmin=vmin, vmax=vmax)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.set_title('$T=0$', fontsize=fontsize['label'])
+            ax_1.set_xticks(np.arange(len(pivot_q)))
+            ax_1.set_xticklabels(pivot_q)
+            ax_1.set_yticks(np.arange(len(pivot_p)))
+            ax_1.set_yticklabels(pivot_p)
+
+            y = si_[1]
+            ax_2.imshow(y, vmin=vmin, vmax=vmax)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.set_title('$T=10$', fontsize=fontsize['label'])
+            ax_2.set_xticks(np.arange(len(pivot_q)))
+            ax_2.set_xticklabels(pivot_q)
+            ax_2.set_yticks(np.arange(len(pivot_p)))
+            ax_2.set_yticklabels(pivot_p)
+
+            y = si_[2]
+            ax_3.imshow(y, vmin=vmin, vmax=vmax)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.set_title('$T=20$', fontsize=fontsize['label'])
+            ax_3.set_xticks(np.arange(len(pivot_q)))
+            ax_3.set_xticklabels(pivot_q)
+            ax_3.set_yticks(np.arange(len(pivot_p)))
+            ax_3.set_yticklabels(pivot_p)
+
+            y = si_[3]
+            im = ax_4.imshow(y, vmin=vmin, vmax=vmax)
+            ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_4.set_title('$T=30$', fontsize=fontsize['label'])
+            ax_4.set_xticks(np.arange(len(pivot_q)))
+            ax_4.set_xticklabels(pivot_q)
+            ax_4.set_yticks(np.arange(len(pivot_p)))
+            ax_4.set_yticklabels(pivot_p)
+            plt.colorbar(im)
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        fig[fig_name].tight_layout()
+        dir_name = 'pq'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
+    return
 
 
-def make_d(input, mode):
-    if mode == 'neuron':
-        d = []
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            d_i = mask_i.sum().item()
-            d.append(d_i)
-    elif mode == 'layer':
-        d = []
-        for name, param in input.items():
-            mask_i = param.view(-1).float()
-            d_i = mask_i.sum().item()
-            d.append(d_i)
-    elif mode == 'global':
-        d = []
-        param_all = []
-        for name, param in input.items():
-            param_all.append(param.view(-1))
-        param_all = torch.cat(param_all, dim=0)
-        mask = param_all.view(-1).float()
-        d.append(mask.sum().item())
-    else:
-        raise ValueError('Not valid mode')
-    return d
+def make_vis_by_layer(df_history):
+    label_dict = {'0': 'First layer', '1': 'Middle layer', '2': 'Last layer'}
+    color_dict = {'0': 'blue', '1': 'cyan', '2': 'red'}
+    linestyle_dict = {'0': '-', '1': '--', '2': '-.'}
+    marker_dict = {'0': 'o', '1': 's', '2': 'p'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (15, 4)
+    capsize = 0
+    capthick = None
+    df_name_layer = defaultdict(list)
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        model_name = df_name_list[1]
+        scope = df_name_list[3]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = 'pr-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+        else:
+            continue
+        if mask:
+            df_name_layer_key = '_'.join([*df_name_list[:-2]])
+            df_name_layer[df_name_layer_key].append(metric_name)
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3 = {}, {}, {}
+    for df_name in df_name_layer:
+        df_name_list = df_name.split('_')
+        fig_name = '_'.join(df_name_list)
+        fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+        if fig_name not in ax_dict_1:
+            ax_dict_1[fig_name] = fig[fig_name].add_subplot(131)
+            ax_dict_2[fig_name] = fig[fig_name].add_subplot(132)
+            ax_dict_3[fig_name] = fig[fig_name].add_subplot(133)
+        ax_1, ax_2, ax_3 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name]
+        layer_names = df_name_layer[df_name]
+        idx = np.linspace(0, len(layer_names) - 1, 3).round().astype(np.int32).tolist()
+        layer_names = [layer_names[x] for x in idx]
+        df_name_neuron, df_name_layer, df_name_global = [], [], []
+        df_name_neuron_std, df_name_layer_std, df_name_global_std = [], [], []
+        for i in range(len(layer_names)):
+            df_name_neuron.append(
+                '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_neuron_std.append(
+                '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:], layer_names[i], 'std']))
+            df_name_layer.append(
+                '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_layer_std.append(
+                '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:], layer_names[i], 'std']))
+            df_name_global.append(
+                '_'.join([*df_name_list[:3], 'global', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_global_std.append(
+                '_'.join([*df_name_list[:3], 'global', *df_name_list[4:], layer_names[i], 'std']))
 
+        for i in range(len(df_name_neuron)):
+            pivot = str(i)
+            pr = df_history[df_name_neuron[i]].iloc[0].to_numpy()
+            pr_std = df_history[df_name_neuron_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(pr))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_1.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_1.legend(loc=loc_dict['Percent of Remaining Weights'], fontsize=fontsize['legend'])
+        ax_1.set_title('Neuron-wise Pruning', fontsize=fontsize['label'])
 
-def make_md(d):
-    m = -np.diff(d)
-    md = m / d[:-1]
-    return md
+        for i in range(len(df_name_layer)):
+            pivot = str(i)
+            pr = df_history[df_name_layer[i]].iloc[0].to_numpy()
+            pr_std = df_history[df_name_layer_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(pr))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_2.set_title('Layer-wise Pruning', fontsize=fontsize['label'])
+
+        for i in range(len(df_name_global)):
+            pivot = str(i)
+            pr = df_history[df_name_global[i]].iloc[0].to_numpy()
+            pr_std = df_history[df_name_global_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(pr))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Percent of Remaining Weights'
+            ax_3.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_3.set_title('Global Pruning', fontsize=fontsize['label'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'layer'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
+    return
 
 
 if __name__ == '__main__':
