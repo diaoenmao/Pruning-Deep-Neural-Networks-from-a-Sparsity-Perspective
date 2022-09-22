@@ -13,6 +13,7 @@ parser.add_argument('--num_experiments', default=1, type=int)
 parser.add_argument('--resume_mode', default=0, type=int)
 parser.add_argument('--mode', default=None, type=str)
 parser.add_argument('--split_round', default=65535, type=int)
+parser.add_argument('--model', default=0, type=int)
 args = vars(parser.parse_args())
 
 
@@ -46,6 +47,7 @@ def main():
     resume_mode = args['resume_mode']
     mode = args['mode']
     split_round = args['split_round']
+    model = args['model']
     gpu_ids = [','.join(str(i) for i in list(range(x, x + world_size))) for x in
                list(range(init_gpu, init_gpu + num_gpus, world_size))]
     init_seeds = [list(range(init_seed, init_seed + num_experiments, experiment_step))]
@@ -53,12 +55,20 @@ def main():
     num_experiments = [[experiment_step]]
     resume_mode = [[resume_mode]]
     filename = '{}_{}'.format(run, mode)
+    if model == 0:
+        model_names = ['linear', 'mlp']
+        prune_iters = ['30']
+    elif model == 1:
+        model_names = ['cnn']
+        prune_iters = ['30']
+    elif model == 2:
+        model_names = ['resnet18']
+        prune_iters = ['15']
+    else:
+        raise ValueError('Not valid model')
     if mode == 'os':
         script_name = [['{}_classifier.py'.format(run)]]
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
         data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -66,8 +76,6 @@ def main():
     elif mode == 'lt':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['lt-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -75,8 +83,6 @@ def main():
     elif mode == 'si':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -84,8 +90,6 @@ def main():
     elif mode == 'scope':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['CIFAR10']
-        model_names = ['mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['neuron', 'layer']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -93,8 +97,6 @@ def main():
     elif mode == 'si-p':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -102,8 +104,6 @@ def main():
     elif mode == 'si-q':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -111,8 +111,6 @@ def main():
     elif mode == 'si-eta_m':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0.001-1', 'si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -120,8 +118,6 @@ def main():
     elif mode == 'si-gamma':
         script_name = [['{}_classifier.py'.format(run)]]
         data_names = ['CIFAR10']
-        model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-3', 'si-0.5-1-0-5', 'si-0.5-1-0-7', 'si-0.5-1-0-9']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
