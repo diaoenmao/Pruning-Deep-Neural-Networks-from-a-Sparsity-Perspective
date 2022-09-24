@@ -149,6 +149,7 @@ def process_control():
     cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     cfg['p'] = torch.arange(0.1, 1.1, 0.1)
     cfg['q'] = torch.arange(1.0, 2.1, 0.1)
+    cfg['beta'] = 0.9
     return
 
 

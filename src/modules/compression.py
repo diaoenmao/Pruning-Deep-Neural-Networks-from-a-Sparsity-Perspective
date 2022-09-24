@@ -43,7 +43,7 @@ class Compression:
                         d = mask_i.float().sum(dim=list(range(1, param.dim()))).to(si_i.device)
                         m = make_bound_si(si_i, d, p, q, eta_m)
                         retain_ratio = m / d
-                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.9)
+                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, cfg['beta'])
                         num_prune = torch.floor(d * prune_ratio).long()
                         pivot_value = torch.sort(pivot_param.view(pivot_param.size(0), -1), dim=1)[0][
                             torch.arange(pivot_param.size(0)), num_prune]
@@ -73,7 +73,7 @@ class Compression:
                         d = mask_i.float().sum().to(si_i.device)
                         m = make_bound_si(si_i, d, p, q, eta_m)
                         retain_ratio = m / d
-                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.9)
+                        prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, cfg['beta'])
                         num_prune = torch.floor(d * prune_ratio).long()
                         pivot_value = torch.sort(pivot_param.view(-1))[0][num_prune]
                     elif self.prune_mode[0] in ['os', 'lt']:
@@ -107,7 +107,7 @@ class Compression:
                 d = mask_i.float().sum().to(si_i.device)
                 m = make_bound_si(si_i, d, p, q, eta_m)
                 retain_ratio = m / d
-                prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, 0.9)
+                prune_ratio = torch.clamp(gamma * (1 - retain_ratio), 0, cfg['beta'])
                 num_prune = torch.floor(d * prune_ratio).long()
                 pivot_value = torch.sort(pivot_param.view(-1))[0][num_prune]
             else:

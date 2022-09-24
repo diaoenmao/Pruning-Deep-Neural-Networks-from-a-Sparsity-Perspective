@@ -131,6 +131,7 @@ def main():
     make_vis_by_gamma(df_history)
     make_vis_by_pq(df_history)
     make_vis_by_layer(df_history)
+    make_vis_by_ratio(df_history)
     return
 
 
@@ -1081,6 +1082,135 @@ def make_vis_by_layer(df_history):
         ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
         fig[fig_name].tight_layout()
         dir_name = 'layer'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
+    return
+
+
+def make_vis_by_ratio(df_history):
+    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($p=0.5$, $q=1.0$)',
+                  'si-1-2-0-1': 'Sparse Index ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
+                  'os-0.2': 'One Shot ($P=0.2$)'}
+    color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
+    linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
+    marker_dict = {'si-0.5-1-0-1': 'o', 'si-1-2-0-1': 's', 'lt-0.2': 'p', 'os-0.2': 'D'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (15, 4)
+    capsize = 0
+    capthick = None
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3 = {}, {}, {}
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        model_name = df_name_list[1]
+        scope = df_name_list[3]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_ and \
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+        elif prune_mode_list[0] in ['lt', 'os']:
+            pivot_ = ['lt-0.2', 'os-0.2']
+            pivot = '-'.join(prune_mode_list)
+            mask = metric_name in ['Accuracy'] and stat == 'mean' and pivot in pivot_ and \
+                   model_name in ['mlp', 'cnn', 'resnet18'] and  scope == 'global'
+        else:
+            continue
+        if mask:
+            fig_name = '_'.join([*df_name_list[:3],*df_name_list[4:-3]])
+            fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+            if fig_name not in ax_dict_1:
+                ax_dict_1[fig_name] = fig[fig_name].add_subplot(131)
+                ax_dict_2[fig_name] = fig[fig_name].add_subplot(132)
+                ax_dict_3[fig_name] = fig[fig_name].add_subplot(133)
+            ax_1, ax_2, ax_3 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name]
+
+            df_name_y_global = '_'.join([*df_name_list[:3], 'global', *df_name_list[4:-1], stat])
+            df_name_y_global_std = '_'.join([*df_name_list[:3], 'global', *df_name_list[4:-1], 'std'])
+            df_name_y_layer = '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:-1], stat])
+            df_name_y_layer_std = '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:-1], 'std'])
+            df_name_y_neuron = '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:-1], stat])
+            df_name_y_neuron_std = '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:-1], 'std'])
+            df_name_pr_global = '_'.join([*df_name_list[:3], 'global', *df_name_list[4:-2],
+                                          'pr-global-global', stat])
+            df_name_pr_global_std = '_'.join([*df_name_list[:3], 'global', *df_name_list[4:-2],
+                                              'pr-global-global', 'std'])
+            df_name_pr_layer = '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:-2],
+                                         'pr-global-global', stat])
+            df_name_pr_layer_std = '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:-2],
+                                             'pr-global-global', 'std'])
+            df_name_pr_neuron = '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:-2],
+                                          'pr-global-global', stat])
+            df_name_pr_neuron_std = '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:-2],
+                                              'pr-global-global', 'std'])
+
+            y_global = df_history[df_name_y_global].iloc[0].to_numpy()
+            y_global_std = df_history[df_name_y_global_std].iloc[0].to_numpy()
+            y_layer = df_history[df_name_y_layer].iloc[0].to_numpy()
+            y_layer_std = df_history[df_name_y_layer_std].iloc[0].to_numpy()
+            y_neuron = df_history[df_name_y_neuron].iloc[0].to_numpy()
+            y_neuron_std = df_history[df_name_y_neuron_std].iloc[0].to_numpy()
+            pr_global = df_history[df_name_pr_global].iloc[0].to_numpy()
+            pr_global_std = df_history[df_name_pr_global_std].iloc[0].to_numpy()
+            pr_layer = df_history[df_name_pr_layer].iloc[0].to_numpy()
+            pr_layer_std = df_history[df_name_pr_layer_std].iloc[0].to_numpy()
+            pr_neuron = df_history[df_name_pr_neuron].iloc[0].to_numpy()
+            pr_neuron_std = df_history[df_name_pr_neuron_std].iloc[0].to_numpy()
+
+            x = pr_global
+            y = y_neuron
+            y_std = y_neuron_std
+            xlabel = 'Percent of Remaining Weights'
+            ylabel = metric_name
+            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.legend(loc=loc_dict[ylabel], fontsize=fontsize['legend'])
+            ax_1.set_title('Neuron-wise Pruning', fontsize=fontsize['label'])
+
+            x = pr_layer
+            y = y_layer
+            y_std = y_layer_std
+            xlabel = 'Percent of Remaining Weights'
+            ylabel = metric_name
+            ax_2.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.set_title('Layer-wise Pruning', fontsize=fontsize['label'])
+
+            x = pr_neuron
+            y = y_global
+            y_std = y_global_std
+            xlabel = 'Percent of Remaining Weights'
+            ylabel = metric_name
+            ax_3.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.set_title('Global Pruning', fontsize=fontsize['label'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'ratio'
         dir_path = os.path.join(vis_path, dir_name)
         fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
         makedir_exist_ok(dir_path)
