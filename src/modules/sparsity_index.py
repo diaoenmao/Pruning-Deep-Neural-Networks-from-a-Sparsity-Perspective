@@ -89,9 +89,6 @@ class SparsityIndex:
                     sparsity_index_i.append(self.make_si(param_all, mask_all, -1, self.p[i], self.q[j]))
             sparsity_index_i = torch.tensor(sparsity_index_i)
             sparsity_index['global'] = sparsity_index_i.reshape((len(self.p), len(self.q), -1))
-            if sparsity_index['global'].min() < 0 and sparsity_index['global'].max() > 1:
-                print(sparsity_index['global'])
-                exit()
         else:
             raise ValueError('Not valid mode')
         return sparsity_index

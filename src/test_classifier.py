@@ -8,7 +8,7 @@ from data import fetch_dataset, make_data_loader
 from metrics import Metric
 from utils import save, to_device, process_control, process_dataset, resume, collate
 from logger import make_logger
-from modules import Mask
+from modules import Compression, Mask, SparsityIndex
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -50,8 +50,11 @@ def runExperiment():
     mask_state_dict = result['mask_state_dict']
     sparsity_index = result['sparsity_index']
     sparsity_index.reset()
+    sparsity_index_pruned = SparsityIndex(cfg['p'], cfg['q'])
+    compression = Compression(cfg['prune_scope'], cfg['prune_mode'])
     data_loader = make_data_loader(dataset, cfg['model_name'])
     test_logger = make_logger(os.path.join('output', 'runs', 'test_{}'.format(cfg['model_tag'])))
+    test_pruned_logger = make_logger(os.path.join('output', 'runs', 'test_pruned_{}'.format(cfg['model_tag'])))
     for iter in range(len(model_state_dict)):
         model.load_state_dict(model_state_dict[iter])
         mask.load_state_dict(mask_state_dict[iter])
@@ -59,11 +62,21 @@ def runExperiment():
         test(data_loader['test'], model, metric, test_logger, iter, last_epoch[iter])
         test_logger.save(False)
         sparsity_index.make_sparsity_index(model, mask)
+        if iter < len(model_state_dict) - 1:
+            if cfg['prune_mode'][0] in ['os']:
+                model.load_state_dict(model_state_dict[0])
+            mask.load_state_dict(mask_state_dict[iter + 1])
+            sparsity_index_pruned.make_sparsity_index(model, mask)
+            compression.init(model, mask, to_device(model.state_dict(), 'cpu'))
+            test_pruned_logger.save(True)
+            test(data_loader['test'], model, metric, test_pruned_logger, iter, last_epoch[iter])
+            test_pruned_logger.save(False)
     result = resume(checkpoint_path)
     train_logger = result['logger'] if 'logger' in result else None
     result = {'cfg': cfg, 'iter': last_iter, 'epoch': last_epoch,
-              'logger': {'train': train_logger, 'test': test_logger}, 'mask_state_dict': mask_state_dict,
-              'sparsity_index': sparsity_index}
+              'logger': {'train': train_logger, 'test': test_logger, 'test-pruned': test_pruned_logger},
+              'mask_state_dict': mask_state_dict, 'sparsity_index': sparsity_index,
+              'sparsity_index_pruned': sparsity_index_pruned}
     save(result, result_path)
     return
 
