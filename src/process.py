@@ -11,9 +11,10 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 result_path = os.path.join('output', 'result')
 save_format = 'png'
 vis_path = os.path.join('output', 'vis', '{}'.format(save_format))
-num_experiments = 1
+num_experiments = 4
 exp = [str(x) for x in list(range(num_experiments))]
 dpi = 300
+write = False
 
 
 def make_control(control_name):
@@ -27,45 +28,31 @@ def make_control(control_name):
 
 def make_controls(mode):
     if mode == 'os':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = ['linear', 'mlp']
-        # model_names = ['linear']
         prune_iters = ['30']
-        # prune_scope = ['neuron', 'layer', 'global']
         prune_scope = ['global']
         prune_mode = ['os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'lt':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = ['linear', 'mlp']
-        # model_names = ['linear']
         prune_iters = ['30']
-        # prune_scope = ['neuron', 'layer', 'global']
         prune_scope = ['global']
         prune_mode = ['lt-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = ['linear', 'mlp']
-        # model_names = ['linear']
         prune_iters = ['30']
-        # prune_scope = ['neuron', 'layer', 'global']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'scope':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = ['mlp']
         prune_iters = ['30']
         prune_scope = ['neuron', 'layer']
@@ -73,40 +60,32 @@ def make_controls(mode):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-p':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
-        model_names = ['linear']
+        data_names = ['FashionMNIST', 'CIFAR10']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-q':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
-        model_names = ['linear']
+        data_names = ['FashionMNIST', 'CIFAR10']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-eta_m':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
-        model_names = ['linear']
+        data_names = ['FashionMNIST', 'CIFAR10']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0.001-1', 'si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-gamma':
-        # data_names = ['FashionMNIST', 'CIFAR10', 'SVHN']
-        # model_names = ['linear', 'mlp', 'cnn', 'resnet18']
-        data_names = ['FashionMNIST']
-        model_names = ['linear']
+        data_names = ['FashionMNIST', 'CIFAR10']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-3', 'si-0.5-1-0-5', 'si-0.5-1-0-7', 'si-0.5-1-0-9']
@@ -118,21 +97,23 @@ def make_controls(mode):
 
 
 def main():
-    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
+    # modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
+    modes = ['si', 'lt', 'os', 'scope']
     controls = []
     for mode in modes:
         controls += make_controls(mode)
     processed_result = process_result(controls)
     df_history = make_df(processed_result, 'history')
     # make_vis_by_prune(df_history)
-    make_vis_by_pruned(df_history)
+    # make_vis_by_pruned(df_history)
     # make_vis_by_p(df_history)
     # make_vis_by_q(df_history)
     # make_vis_by_eta_m(df_history)
     # make_vis_by_gamma(df_history)
     # make_vis_by_pq(df_history)
-    # make_vis_by_layer(df_history)
+    make_vis_by_layer(df_history)
     # make_vis_by_ratio(df_history)
+    make_vis_by_si_layer(df_history)
     return
 
 
@@ -146,7 +127,6 @@ def process_result(controls):
         model_tag = '_'.join(control)
         gather_result(list(control), model_tag, result)
     summarize_result(None, result)
-    save(result, os.path.join(result_path, 'processed_result.pt'))
     processed_result = tree()
     extract_result(processed_result, result, [])
     return processed_result
@@ -160,8 +140,7 @@ def gather_result(control, model_tag, processed_result):
             base_result = load(base_result_path_i)
             mask_state_dict = base_result['mask_state_dict']
             sparsity_index = base_result['sparsity_index']
-            if 'sparsity_index_pruned' in base_result:
-                sparsity_index_pruned = base_result['sparsity_index_pruned']
+            sparsity_index_pruned = base_result['sparsity_index_pruned']
             p, q = base_result['cfg']['p'], base_result['cfg']['q']
             p = [round(x.item(), 1) for x in p]
             q = [round(x.item(), 1) for x in q]
@@ -215,28 +194,26 @@ def gather_result(control, model_tag, processed_result):
                             'history'][exp_idx].append(sparsity_index.gini[prune_scope][iter][name])
                     processed_result['test'][metric_name]['history'][exp_idx] = np.stack(
                         processed_result['test'][metric_name]['history'][exp_idx], axis=0)
-
-            if 'sparsity_index_pruned' in base_result:
-                for prune_scope in sparsity_index_pruned.si:
-                    for name in sparsity_index_pruned.si[prune_scope][0]:
-                        for i in range(len(p)):
-                            for j in range(len(q)):
-                                metric_name = 'test-pruned/si-{}-{}-{}-{}'.format(prune_scope, name, p[i], q[j])
-                                processed_result['test-pruned'][metric_name]['history'][exp_idx] = []
-                                for iter in range(len(sparsity_index_pruned.si[prune_scope])):
-                                    processed_result['test-pruned'][metric_name]['history'][
-                                        exp_idx].append(sparsity_index_pruned.si[prune_scope][iter][name][i, j])
-                                processed_result['test-pruned'][metric_name]['history'][exp_idx] = np.stack(
-                                    processed_result['test-pruned'][metric_name]['history'][exp_idx], axis=0)
-                for prune_scope in sparsity_index_pruned.gini:
-                    for name in sparsity_index_pruned.gini[prune_scope][0]:
-                        metric_name = 'test-pruned/gini-{}-{}'.format(prune_scope, name)
-                        processed_result['test-pruned'][metric_name]['history'][exp_idx] = []
-                        for iter in range(len(sparsity_index_pruned.gini[prune_scope])):
-                            processed_result['test-pruned'][metric_name][
-                                'history'][exp_idx].append(sparsity_index_pruned.gini[prune_scope][iter][name])
-                        processed_result['test-pruned'][metric_name]['history'][exp_idx] = np.stack(
-                            processed_result['test-pruned'][metric_name]['history'][exp_idx], axis=0)
+            for prune_scope in sparsity_index_pruned.si:
+                for name in sparsity_index_pruned.si[prune_scope][0]:
+                    for i in range(len(p)):
+                        for j in range(len(q)):
+                            metric_name = 'test-pruned/si-{}-{}-{}-{}'.format(prune_scope, name, p[i], q[j])
+                            processed_result['test-pruned'][metric_name]['history'][exp_idx] = []
+                            for iter in range(len(sparsity_index_pruned.si[prune_scope])):
+                                processed_result['test-pruned'][metric_name]['history'][
+                                    exp_idx].append(sparsity_index_pruned.si[prune_scope][iter][name][i, j])
+                            processed_result['test-pruned'][metric_name]['history'][exp_idx] = np.stack(
+                                processed_result['test-pruned'][metric_name]['history'][exp_idx], axis=0)
+            for prune_scope in sparsity_index_pruned.gini:
+                for name in sparsity_index_pruned.gini[prune_scope][0]:
+                    metric_name = 'test-pruned/gini-{}-{}'.format(prune_scope, name)
+                    processed_result['test-pruned'][metric_name]['history'][exp_idx] = []
+                    for iter in range(len(sparsity_index_pruned.gini[prune_scope])):
+                        processed_result['test-pruned'][metric_name][
+                            'history'][exp_idx].append(sparsity_index_pruned.gini[prune_scope][iter][name])
+                    processed_result['test-pruned'][metric_name]['history'][exp_idx] = np.stack(
+                        processed_result['test-pruned'][metric_name]['history'][exp_idx], axis=0)
         else:
             print('Missing {}'.format(base_result_path_i))
     else:
@@ -294,7 +271,7 @@ def make_df(processed_result, mode):
         metric_name = exp_name_list[-2]
         output = False
         if 'Accuracy' in metric_name or 'si-global' in metric_name or 'gini-global' in metric_name or \
-                'pr-global' in metric_name or 'pr-layer' in metric_name:
+                'pr-global' in metric_name or 'pr-layer' in metric_name or 'si-layer' in metric_name:
             output = True
         return output
 
@@ -306,20 +283,22 @@ def make_df(processed_result, mode):
         df_name = '_'.join([*exp_name_list])
         index_name = [1]
         df[df_name].append(pd.DataFrame(data=processed_result[mode][exp_name].reshape(1, -1), index=index_name))
-    startrow = 0
-    writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode), engine='xlsxwriter')
     for df_name in df:
         df[df_name] = pd.concat(df[df_name])
-        df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
-        writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
-        startrow = startrow + len(df[df_name].index) + 3
-    writer.save()
+    if write:
+        startrow = 0
+        writer = pd.ExcelWriter('{}/result_{}.xlsx'.format(result_path, mode), engine='xlsxwriter')
+        for df_name in df:
+            df[df_name].to_excel(writer, sheet_name='Sheet1', startrow=startrow + 1)
+            writer.sheets['Sheet1'].write_string(startrow, 0, df_name)
+            startrow = startrow + len(df[df_name].index) + 3
+        writer.save()
     return df
 
 
 def make_vis_by_prune(df_history):
-    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($p=0.5$, $q=1.0$)',
-                  'si-1-2-0-1': 'Sparse Index ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
+    label_dict = {'si-0.5-1-0-1': 'SAP ($p=0.5$, $q=1.0$)',
+                  'si-1-2-0-1': 'SAP ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
                   'os-0.2': 'One Shot ($P=0.2$)'}
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
@@ -328,7 +307,7 @@ def make_vis_by_prune(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -433,8 +412,8 @@ def make_vis_by_prune(df_history):
 
 
 def make_vis_by_pruned(df_history):
-    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($p=0.5$, $q=1.0$)',
-                  'si-1-2-0-1': 'Sparse Index ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
+    label_dict = {'si-0.5-1-0-1': 'SAP ($p=0.5$, $q=1.0$)',
+                  'si-1-2-0-1': 'SAP ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
                   'os-0.2': 'One Shot ($P=0.2$)'}
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
@@ -443,7 +422,7 @@ def make_vis_by_pruned(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -558,9 +537,9 @@ def make_vis_by_pruned(df_history):
 
 
 def make_vis_by_p(df_history):
-    label_dict = {'si-0.2-1-0-1': 'Sparse Index ($p=0.2$)', 'si-0.4-1-0-1': 'Sparse Index ($p=0.4$)',
-                  'si-0.5-1-0-1': 'Sparse Index ($p=0.5$)', 'si-0.6-1-0-1': 'Sparse Index ($p=0.6$)',
-                  'si-0.8-1-0-1': 'Sparse Index ($p=0.8$)'}
+    label_dict = {'si-0.2-1-0-1': 'SAP ($p=0.2$)', 'si-0.4-1-0-1': 'SAP ($p=0.4$)',
+                  'si-0.5-1-0-1': 'SAP ($p=0.5$)', 'si-0.6-1-0-1': 'SAP ($p=0.6$)',
+                  'si-0.8-1-0-1': 'SAP ($p=0.8$)'}
     color_dict = {'si-0.2-1-0-1': 'red', 'si-0.4-1-0-1': 'orange', 'si-0.5-1-0-1': 'blue',
                   'si-0.6-1-0-1': 'cyan', 'si-0.8-1-0-1': 'black'}
     linestyle_dict = {'si-0.2-1-0-1': '-', 'si-0.4-1-0-1': '--', 'si-0.5-1-0-1': '-.', 'si-0.6-1-0-1': ':',
@@ -571,7 +550,7 @@ def make_vis_by_p(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -676,9 +655,9 @@ def make_vis_by_p(df_history):
 
 
 def make_vis_by_q(df_history):
-    label_dict = {'si-1-1.2-0-1': 'Sparse Index ($q=1.2$)', 'si-1-1.4-0-1': 'Sparse Index ($q=1.4$)',
-                  'si-1-1.6-0-1': 'Sparse Index ($q=1.6$)', 'si-1-1.8-0-1': 'Sparse Index ($q=1.8$)',
-                  'si-1-2-0-1': 'Sparse Index ($q=2.0$)'}
+    label_dict = {'si-1-1.2-0-1': 'SAP ($q=1.2$)', 'si-1-1.4-0-1': 'SAP ($q=1.4$)',
+                  'si-1-1.6-0-1': 'SAP ($q=1.6$)', 'si-1-1.8-0-1': 'SAP ($q=1.8$)',
+                  'si-1-2-0-1': 'SAP ($q=2.0$)'}
     color_dict = {'si-1-1.2-0-1': 'red', 'si-1-1.4-0-1': 'orange', 'si-1-1.6-0-1': 'blue',
                   'si-1-1.8-0-1': 'cyan', 'si-1-2-0-1': 'black'}
     linestyle_dict = {'si-1-1.2-0-1': '-', 'si-1-1.4-0-1': '--', 'si-1-1.6-0-1': '-.', 'si-1-1.8-0-1': ':',
@@ -689,7 +668,7 @@ def make_vis_by_q(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -793,9 +772,9 @@ def make_vis_by_q(df_history):
 
 
 def make_vis_by_eta_m(df_history):
-    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($\eta_m=0.0$)', 'si-0.5-1-0.001-1': 'Sparse Index ($\eta_m=0.001$)',
-                  'si-0.5-1-0.01-1': 'Sparse Index ($\eta_m=0.01$)', 'si-0.5-1-0.1-1': 'Sparse Index ($\eta_m=0.1$)',
-                  'si-0.5-1-1-1': 'Sparse Index ($\eta_m=1.0$)'}
+    label_dict = {'si-0.5-1-0-1': 'SAP ($\eta_m=0.0$)', 'si-0.5-1-0.001-1': 'SAP ($\eta_m=0.001$)',
+                  'si-0.5-1-0.01-1': 'SAP ($\eta_m=0.01$)', 'si-0.5-1-0.1-1': 'SAP ($\eta_m=0.1$)',
+                  'si-0.5-1-1-1': 'SAP ($\eta_m=1.0$)'}
     color_dict = {'si-0.5-1-0-1': 'red', 'si-0.5-1-0.001-1': 'orange', 'si-0.5-1-0.01-1': 'blue',
                   'si-0.5-1-0.1-1': 'cyan', 'si-0.5-1-1-1': 'black'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-0.5-1-0.001-1': '--', 'si-0.5-1-0.01-1': '-.', 'si-0.5-1-0.1-1': ':',
@@ -806,7 +785,7 @@ def make_vis_by_eta_m(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -907,9 +886,9 @@ def make_vis_by_eta_m(df_history):
 
 
 def make_vis_by_gamma(df_history):
-    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($\gamma=1.0$)', 'si-0.5-1-0-3': 'Sparse Index ($\gamma=3.0$)',
-                  'si-0.5-1-0-5': 'Sparse Index ($\gamma=5.0$)', 'si-0.5-1-0-7': 'Sparse Index ($\gamma=7.0$)',
-                  'si-0.5-1-0-9': 'Sparse Index ($\gamma=9.0$)'}
+    label_dict = {'si-0.5-1-0-1': 'SAP ($\gamma=1.0$)', 'si-0.5-1-0-3': 'SAP ($\gamma=3.0$)',
+                  'si-0.5-1-0-5': 'SAP ($\gamma=5.0$)', 'si-0.5-1-0-7': 'SAP ($\gamma=7.0$)',
+                  'si-0.5-1-0-9': 'SAP ($\gamma=9.0$)'}
     color_dict = {'si-0.5-1-0-1': 'red', 'si-0.5-1-0-3': 'orange', 'si-0.5-1-0-5': 'blue',
                   'si-0.5-1-0-7': 'cyan', 'si-0.5-1-0-9': 'black'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-0.5-1-0-3': '--', 'si-0.5-1-0-5': '-.', 'si-0.5-1-0-7': ':',
@@ -920,7 +899,7 @@ def make_vis_by_gamma(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     pivot_p = '0.5'
     pivot_q = '1.0'
@@ -1125,28 +1104,29 @@ def make_vis_by_layer(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (15, 4)
-    capsize = 0
+    capsize = None
     capthick = None
-    df_name_layer = defaultdict(list)
+    df_name_layer_ = defaultdict(list)
     for df_name in df_history:
         df_name_list = df_name.split('_')
         metric_name, stat = df_name_list[-2], df_name_list[-1]
+        data_name = df_name_list[0]
         model_name = df_name_list[1]
         scope = df_name_list[3]
         prune_mode_list = df_name_list[4].split('-')
         if prune_mode_list[0] == 'si':
-            pivot_ = ['si-1-2-0-1']
+            pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = 'test/pr-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
         else:
             continue
         if mask:
             df_name_layer_key = '_'.join([*df_name_list[:-2]])
-            df_name_layer[df_name_layer_key].append(metric_name)
+            df_name_layer_[df_name_layer_key].append(metric_name)
     fig = {}
     ax_dict_1, ax_dict_2, ax_dict_3 = {}, {}, {}
-    for df_name in df_name_layer:
+    for df_name in df_name_layer_:
         df_name_list = df_name.split('_')
         fig_name = '_'.join(df_name_list)
         fig[fig_name] = plt.figure(fig_name, figsize=figsize)
@@ -1155,7 +1135,7 @@ def make_vis_by_layer(df_history):
             ax_dict_2[fig_name] = fig[fig_name].add_subplot(132)
             ax_dict_3[fig_name] = fig[fig_name].add_subplot(133)
         ax_1, ax_2, ax_3 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name]
-        layer_names = df_name_layer[df_name]
+        layer_names = df_name_layer_[df_name]
         idx = np.linspace(0, len(layer_names) - 1, 3).round().astype(np.int32).tolist()
         layer_names = [layer_names[x] for x in idx]
         df_name_neuron, df_name_layer, df_name_global = [], [], []
@@ -1235,8 +1215,8 @@ def make_vis_by_layer(df_history):
 
 
 def make_vis_by_ratio(df_history):
-    label_dict = {'si-0.5-1-0-1': 'Sparse Index ($p=0.5$, $q=1.0$)',
-                  'si-1-2-0-1': 'Sparse Index ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
+    label_dict = {'si-0.5-1-0-1': 'SAP ($p=0.5$, $q=1.0$)',
+                  'si-1-2-0-1': 'SAP ($p=1.0$, $q=2.0$)', 'lt-0.2': 'Lottery Ticket ($P=0.2$)',
                   'os-0.2': 'One Shot ($P=0.2$)'}
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
@@ -1245,13 +1225,14 @@ def make_vis_by_ratio(df_history):
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (15, 4)
-    capsize = 0
+    capsize = None
     capthick = None
     fig = {}
     ax_dict_1, ax_dict_2, ax_dict_3 = {}, {}, {}
     for df_name in df_history:
         df_name_list = df_name.split('_')
         metric_name, stat = df_name_list[-2], df_name_list[-1]
+        data_name = df_name_list[0]
         model_name = df_name_list[1]
         scope = df_name_list[3]
         prune_mode_list = df_name_list[4].split('-')
@@ -1259,12 +1240,12 @@ def make_vis_by_ratio(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
         elif prune_mode_list[0] in ['lt', 'os']:
             pivot_ = ['lt-0.2', 'os-0.2']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
         else:
             continue
         if mask:
@@ -1355,6 +1336,125 @@ def make_vis_by_ratio(df_history):
         ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
         fig[fig_name].tight_layout()
         dir_name = 'ratio'
+        dir_path = os.path.join(vis_path, dir_name)
+        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        makedir_exist_ok(dir_path)
+        plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close(fig_name)
+    return
+
+
+def make_vis_by_si_layer(df_history):
+    label_dict = {'0': 'First layer', '1': 'Middle layer', '2': 'Last layer'}
+    color_dict = {'0': 'blue', '1': 'cyan', '2': 'red'}
+    linestyle_dict = {'0': '-', '1': '--', '2': '-.'}
+    marker_dict = {'0': 'o', '1': 's', '2': 'p'}
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+                'Gini Index': 'lower left'}
+    fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
+    figsize = (15, 4)
+    capsize = None
+    capthick = None
+    df_name_layer_ = defaultdict(list)
+    for df_name in df_history:
+        df_name_list = df_name.split('_')
+        metric_name, stat = df_name_list[-2], df_name_list[-1]
+        data_name = df_name_list[0]
+        model_name = df_name_list[1]
+        scope = df_name_list[3]
+        prune_mode_list = df_name_list[4].split('-')
+        if prune_mode_list[0] == 'si':
+            pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
+            pivot = '-'.join(prune_mode_list)
+            mask = 'test/si-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
+        else:
+            continue
+        if mask:
+            df_name_layer_key = '_'.join([*df_name_list[:-2]])
+            df_name_layer_[df_name_layer_key].append(metric_name)
+    fig = {}
+    ax_dict_1, ax_dict_2, ax_dict_3 = {}, {}, {}
+    for df_name in df_name_layer_:
+        df_name_list = df_name.split('_')
+        fig_name = '_'.join(df_name_list)
+        fig[fig_name] = plt.figure(fig_name, figsize=figsize)
+        if fig_name not in ax_dict_1:
+            ax_dict_1[fig_name] = fig[fig_name].add_subplot(131)
+            ax_dict_2[fig_name] = fig[fig_name].add_subplot(132)
+            ax_dict_3[fig_name] = fig[fig_name].add_subplot(133)
+        ax_1, ax_2, ax_3 = ax_dict_1[fig_name], ax_dict_2[fig_name], ax_dict_3[fig_name]
+        layer_names = df_name_layer_[df_name]
+        idx = np.linspace(0, len(layer_names) - 1, 3).round().astype(np.int32).tolist()
+        layer_names = [layer_names[x] for x in idx]
+        df_name_neuron, df_name_layer, df_name_global = [], [], []
+        df_name_neuron_std, df_name_layer_std, df_name_global_std = [], [], []
+        for i in range(len(layer_names)):
+            df_name_neuron.append(
+                '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_neuron_std.append(
+                '_'.join([*df_name_list[:3], 'neuron', *df_name_list[4:], layer_names[i], 'std']))
+            df_name_layer.append(
+                '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_layer_std.append(
+                '_'.join([*df_name_list[:3], 'layer', *df_name_list[4:], layer_names[i], 'std']))
+            df_name_global.append(
+                '_'.join([*df_name_list[:3], 'global', *df_name_list[4:], layer_names[i], 'mean']))
+            df_name_global_std.append(
+                '_'.join([*df_name_list[:3], 'global', *df_name_list[4:], layer_names[i], 'std']))
+        for i in range(len(df_name_neuron)):
+            pivot = str(i)
+            si = df_history[df_name_neuron[i]].iloc[0].to_numpy()
+            si_std = df_history[df_name_neuron_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(si))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_1.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_1.legend(loc=loc_dict['Percent of Remaining Weights'], fontsize=fontsize['legend'])
+        ax_1.set_title('Neuron-wise Pruning', fontsize=fontsize['label'])
+
+        for i in range(len(df_name_layer)):
+            pivot = str(i)
+            si = df_history[df_name_layer[i]].iloc[0].to_numpy()
+            si_std = df_history[df_name_layer_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(si))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_2.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_2.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_2.set_title('Layer-wise Pruning', fontsize=fontsize['label'])
+
+        for i in range(len(df_name_global)):
+            pivot = str(i)
+            si = df_history[df_name_global[i]].iloc[0].to_numpy()
+            si_std = df_history[df_name_global_std[i]].iloc[0].to_numpy()
+            x = np.arange(len(si))
+            xlabel = 'Iteration (T)'
+            ylabel = 'Sparsity Index'
+            ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+                          label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
+            ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
+            ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
+            ax_3.xaxis.set_tick_params(labelsize=fontsize['ticks'])
+            ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
+        ax_3.set_title('Global Pruning', fontsize=fontsize['label'])
+
+    for fig_name in fig:
+        fig[fig_name] = plt.figure(fig_name)
+        ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
+        ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
+        fig[fig_name].tight_layout()
+        dir_name = 'si_layer'
         dir_path = os.path.join(vis_path, dir_name)
         fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
         makedir_exist_ok(dir_path)

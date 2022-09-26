@@ -56,7 +56,10 @@ def main():
     resume_mode = [[resume_mode]]
     filename = '{}_{}'.format(run, mode)
     if model == 0:
-        model_names = ['linear', 'mlp']
+        if mode == 'scope':
+            model_names = ['mlp']
+        else:
+            model_names = ['linear', 'mlp']
         prune_iters = ['30']
     elif model == 1:
         model_names = ['cnn']
@@ -89,7 +92,7 @@ def main():
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'scope':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10']
         prune_scope = ['neuron', 'layer']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]

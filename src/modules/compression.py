@@ -1,5 +1,6 @@
 import torch
 from collections import OrderedDict
+from config import cfg
 
 
 def make_bound_si(si, d, p, q, eta_m):
