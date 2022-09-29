@@ -36,14 +36,13 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     model_path = os.path.join('output', 'model')
     checkpoint_path = os.path.join(model_path, '{}_{}.pt'.format(cfg['model_tag'], 'checkpoint'))
-    best_path = os.path.join(model_path, '{}_{}.pt'.format(cfg['model_tag'], 'best'))
     result_path = os.path.join('output', 'result', '{}.pt'.format(cfg['model_tag']))
     dataset = fetch_dataset(cfg['data_name'])
     process_dataset(dataset)
     model = eval('models.{}().to(cfg["device"])'.format(cfg['model_name']))
     mask = Mask(to_device(model.state_dict(), 'cpu'))
     metric = Metric({'test': ['Loss', 'Accuracy']})
-    result = resume(best_path)
+    result = resume(checkpoint_path)
     last_iter = result['iter']
     last_epoch = result['epoch']
     model_state_dict = result['model_state_dict']

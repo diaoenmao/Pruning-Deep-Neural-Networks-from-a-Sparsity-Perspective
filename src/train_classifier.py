@@ -87,7 +87,7 @@ def runExperiment():
             scheduler.step()
             last_epoch[-1] = epoch
             model_state_dict[-1] = to_device(model.state_dict(), 'cpu')
-            result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch,
+            result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch, 'init_model_state_dict': init_model_state_dict,
                       'model_state_dict': model_state_dict, 'optimizer_state_dict': optimizer.state_dict(),
                       'scheduler_state_dict': scheduler.state_dict(), 'metric_state_dict': metric.state_dict(),
                       'mask_state_dict': mask_state_dict, 'logger': logger, 'sparsity_index': sparsity_index}

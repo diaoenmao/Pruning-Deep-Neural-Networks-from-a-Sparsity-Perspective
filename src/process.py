@@ -9,7 +9,7 @@ from collections import defaultdict
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 result_path = os.path.join('output', 'result')
-save_format = 'png'
+save_format = 'pdf'
 vis_path = os.path.join('output', 'vis', '{}'.format(save_format))
 num_experiments = 4
 exp = [str(x) for x in list(range(num_experiments))]
@@ -26,67 +26,78 @@ def make_control(control_name):
     return controls
 
 
-def make_controls(mode):
-    if mode == 'os':
-        data_names = ['FashionMNIST', 'CIFAR10']
+def make_controls(mode, model):
+    if model == 0:
         model_names = ['linear', 'mlp']
         prune_iters = ['30']
+    elif model == 1:
+        model_names = ['cnn']
+        prune_iters = ['30']
+    elif model == 2:
+        model_names = ['resnet18']
+        prune_iters = ['15']
+    else:
+        raise ValueError('Not valid model')
+    if mode == 'os':
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'lt':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['lt-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'scope':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['neuron', 'layer']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-p':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['si-0.2-1-0-1', 'si-0.4-1-0-1', 'si-0.6-1-0-1', 'si-0.8-1-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-q':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['si-1-1.2-0-1', 'si-1-1.4-0-1', 'si-1-1.6-0-1', 'si-1-1.8-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-eta_m':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0.001-1', 'si-0.5-1-0.01-1', 'si-0.5-1-0.1-1', 'si-0.5-1-1-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-gamma':
-        data_names = ['FashionMNIST', 'CIFAR10']
-        model_names = ['linear', 'mlp']
-        prune_iters = ['30']
+        data_names = ['FashionMNIST']
+        model_names = model_names
+        prune_iters = prune_iters
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-3', 'si-0.5-1-0-5', 'si-0.5-1-0-7', 'si-0.5-1-0-9']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
@@ -97,23 +108,28 @@ def make_controls(mode):
 
 
 def main():
-    # modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
+    model = 1
+    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
+    modes = ['si', 'lt', 'os']
     modes = ['si', 'lt', 'os', 'scope']
+    modes = ['si', 'lt', 'os', 'si-p', 'si-q']
+    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q']
+    modes = ['si', 'si-eta_m', 'si-gamma']
     controls = []
     for mode in modes:
-        controls += make_controls(mode)
+        controls += make_controls(mode, model)
     processed_result = process_result(controls)
     df_history = make_df(processed_result, 'history')
-    # make_vis_by_prune(df_history)
-    # make_vis_by_pruned(df_history)
-    # make_vis_by_p(df_history)
-    # make_vis_by_q(df_history)
-    # make_vis_by_eta_m(df_history)
-    # make_vis_by_gamma(df_history)
-    # make_vis_by_pq(df_history)
+    make_vis_by_prune(df_history)
+    make_vis_by_pruned(df_history)
     make_vis_by_layer(df_history)
-    # make_vis_by_ratio(df_history)
+    make_vis_by_ratio(df_history)
     make_vis_by_si_layer(df_history)
+    make_vis_by_p(df_history)
+    make_vis_by_q(df_history)
+    make_vis_by_pq(df_history)
+    make_vis_by_eta_m(df_history)
+    make_vis_by_gamma(df_history)
     return
 
 
@@ -129,6 +145,7 @@ def process_result(controls):
     summarize_result(None, result)
     processed_result = tree()
     extract_result(processed_result, result, [])
+    print('Processing finished')
     return processed_result
 
 
@@ -195,6 +212,8 @@ def gather_result(control, model_tag, processed_result):
                     processed_result['test'][metric_name]['history'][exp_idx] = np.stack(
                         processed_result['test'][metric_name]['history'][exp_idx], axis=0)
             for prune_scope in sparsity_index_pruned.si:
+                if len(sparsity_index_pruned.si[prune_scope]) == 0:
+                    break
                 for name in sparsity_index_pruned.si[prune_scope][0]:
                     for i in range(len(p)):
                         for j in range(len(q)):
@@ -206,6 +225,8 @@ def gather_result(control, model_tag, processed_result):
                             processed_result['test-pruned'][metric_name]['history'][exp_idx] = np.stack(
                                 processed_result['test-pruned'][metric_name]['history'][exp_idx], axis=0)
             for prune_scope in sparsity_index_pruned.gini:
+                if len(sparsity_index_pruned.gini[prune_scope]) == 0:
+                    break
                 for name in sparsity_index_pruned.gini[prune_scope][0]:
                     metric_name = 'test-pruned/gini-{}-{}'.format(prune_scope, name)
                     processed_result['test-pruned'][metric_name]['history'][exp_idx] = []
@@ -223,7 +244,11 @@ def gather_result(control, model_tag, processed_result):
 
 def summarize_result(key, value):
     if key in ['mean', 'history']:
-        value['summary']['value'] = np.stack(list(value.values()), axis=0)
+        filtered_value = [v for v in value.values() if len(v) not in [1, 200]]
+        # s = [len(v) for v in filtered_value]
+        # print(s)
+        # value['summary']['value'] = np.stack(list(value.values()), axis=0)
+        value['summary']['value'] = np.stack(filtered_value, axis=0)
         value['summary']['mean'] = np.mean(value['summary']['value'], axis=0)
         value['summary']['std'] = np.std(value['summary']['value'], axis=0)
         value['summary']['max'] = np.max(value['summary']['value'], axis=0)
@@ -303,7 +328,7 @@ def make_vis_by_prune(df_history):
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
     marker_dict = {'si-0.5-1-0-1': 'o', 'si-1-2-0-1': 's', 'lt-0.2': 'p', 'os-0.2': 'D'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -370,7 +395,7 @@ def make_vis_by_prune(df_history):
 
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -378,7 +403,7 @@ def make_vis_by_prune(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -404,7 +429,7 @@ def make_vis_by_prune(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'prune'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -418,7 +443,7 @@ def make_vis_by_pruned(df_history):
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
     marker_dict = {'si-0.5-1-0-1': 'o', 'si-1-2-0-1': 's', 'lt-0.2': 'p', 'os-0.2': 'D'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -476,10 +501,10 @@ def make_vis_by_pruned(df_history):
 
             x = np.arange(len(y_pruned))
             if prune_mode_list[0] == 'os':
-                y = np.repeat(y[0], len(y_pruned))
-                y_std = np.repeat(y_std[0], len(y_pruned))
-                si = np.repeat(si[0], len(y_pruned))
-                si_std = np.repeat(si_std[0], len(y_pruned))
+                y = np.concatenate([y[[0]], y_pruned])
+                y_std = np.concatenate([y_std[[0]], y_pruned_std])
+                si = np.concatenate([si[[0]], si_pruned])
+                si_std = np.concatenate([si_std[[0]], si_pruned_std])
 
             xlabel = 'Iteration (T)'
             ylabel = metric_name.split('/')[1]
@@ -502,7 +527,7 @@ def make_vis_by_pruned(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si_pruned, yerr=si_pruned_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -511,7 +536,7 @@ def make_vis_by_pruned(df_history):
             ax_3.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index Difference'
+            ylabel = 'PQ Index Difference'
             ax_4.errorbar(x, si[x] - si_pruned, yerr=np.sqrt(si_std[x] ** 2 + si_pruned_std ** 2),
                           color=color_dict[pivot], linestyle=linestyle_dict[pivot], label=label_dict[pivot],
                           marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
@@ -529,7 +554,7 @@ def make_vis_by_pruned(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'pruned'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -546,7 +571,7 @@ def make_vis_by_p(df_history):
                       'si-0.8-1-0-1': (0, (1, 10))}
     marker_dict = {'si-0.2-1-0-1': 'o', 'si-0.4-1-0-1': 's', 'si-0.5-1-0-1': 'p', 'si-0.6-1-0-1': 'D',
                    'si-0.8-1-0-1': 'H'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -609,7 +634,7 @@ def make_vis_by_p(df_history):
 
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -617,7 +642,7 @@ def make_vis_by_p(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -637,8 +662,8 @@ def make_vis_by_p(df_history):
     for fig_name in fig:
         fig[fig_name] = plt.figure(fig_name)
         handles, labels = ax_dict_1[fig_name].get_legend_handles_labels()
-        handles = [*handles[1:], handles[0]]
-        labels = [*labels[1:], labels[0]]
+        handles = [*handles[1:3], handles[0], *handles[3:]]
+        labels = [*labels[1:3], labels[0], *labels[3:]]
         ax_dict_1[fig_name].legend(handles, labels, loc=loc_dict['Accuracy'], fontsize=fontsize['legend'])
         ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
         ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
@@ -647,7 +672,7 @@ def make_vis_by_p(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'p'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -664,7 +689,7 @@ def make_vis_by_q(df_history):
                       'si-1-2-0-1': (0, (1, 10))}
     marker_dict = {'si-1-1.2-0-1': 'o', 'si-1-1.4-0-1': 's', 'si-1-1.6-0-1': 'p', 'si-1-1.8-0-1': 'D',
                    'si-1-2-0-1': 'H'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -726,7 +751,7 @@ def make_vis_by_q(df_history):
 
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -734,7 +759,7 @@ def make_vis_by_q(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -754,8 +779,8 @@ def make_vis_by_q(df_history):
     for fig_name in fig:
         fig[fig_name] = plt.figure(fig_name)
         handles, labels = ax_dict_1[fig_name].get_legend_handles_labels()
-        handles = [*handles[1:3], handles[0], *handles[3:]]
-        labels = [*labels[1:3], labels[0], *labels[3:]]
+        handles = [*handles[1:], handles[0]]
+        labels = [*labels[1:], labels[0]]
         ax_dict_1[fig_name].legend(handles, labels, loc=loc_dict['Accuracy'], fontsize=fontsize['legend'])
         ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
         ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
@@ -764,7 +789,7 @@ def make_vis_by_q(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'q'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -772,16 +797,16 @@ def make_vis_by_q(df_history):
 
 
 def make_vis_by_eta_m(df_history):
-    label_dict = {'si-0.5-1-0-1': 'SAP ($\eta_m=0.0$)', 'si-0.5-1-0.001-1': 'SAP ($\eta_m=0.001$)',
-                  'si-0.5-1-0.01-1': 'SAP ($\eta_m=0.01$)', 'si-0.5-1-0.1-1': 'SAP ($\eta_m=0.1$)',
-                  'si-0.5-1-1-1': 'SAP ($\eta_m=1.0$)'}
+    label_dict = {'si-0.5-1-0-1': 'SAP ($\eta_r=0.0$)', 'si-0.5-1-0.001-1': 'SAP ($\eta_r=0.001$)',
+                  'si-0.5-1-0.01-1': 'SAP ($\eta_r=0.01$)', 'si-0.5-1-0.1-1': 'SAP ($\eta_r=0.1$)',
+                  'si-0.5-1-1-1': 'SAP ($\eta_r=1.0$)'}
     color_dict = {'si-0.5-1-0-1': 'red', 'si-0.5-1-0.001-1': 'orange', 'si-0.5-1-0.01-1': 'blue',
                   'si-0.5-1-0.1-1': 'cyan', 'si-0.5-1-1-1': 'black'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-0.5-1-0.001-1': '--', 'si-0.5-1-0.01-1': '-.', 'si-0.5-1-0.1-1': ':',
                       'si-0.5-1-1-1': (0, (1, 10))}
     marker_dict = {'si-0.5-1-0-1': 'o', 'si-0.5-1-0.001-1': 's', 'si-0.5-1-0.01-1': 'p', 'si-0.5-1-0.1-1': 'D',
                    'si-0.5-1-1-1': 'H'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -844,7 +869,7 @@ def make_vis_by_eta_m(df_history):
 
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -852,7 +877,7 @@ def make_vis_by_eta_m(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -878,7 +903,7 @@ def make_vis_by_eta_m(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'eta_m'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -895,7 +920,7 @@ def make_vis_by_gamma(df_history):
                       'si-0.5-1-0-9': (0, (1, 10))}
     marker_dict = {'si-0.5-1-0-1': 'o', 'si-0.5-1-0-3': 's', 'si-0.5-1-0-5': 'p', 'si-0.5-1-0-7': 'D',
                    'si-0.5-1-0-9': 'H'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (20, 4)
@@ -958,7 +983,7 @@ def make_vis_by_gamma(df_history):
 
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -966,7 +991,7 @@ def make_vis_by_gamma(df_history):
             ax_2.yaxis.set_tick_params(labelsize=fontsize['ticks'])
 
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -992,7 +1017,7 @@ def make_vis_by_gamma(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'gamma'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -1009,6 +1034,7 @@ def make_vis_by_pq(df_history):
     for df_name in df_history:
         df_name_list = df_name.split('_')
         metric_name, stat = df_name_list[-2], df_name_list[-1]
+        prune_iters = df_name_list[2]
         prune_mode_list = df_name_list[4].split('-')
         if prune_mode_list[0] == 'si':
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
@@ -1037,7 +1063,13 @@ def make_vis_by_pq(df_history):
                         [*df_name_list[:-2], 'test/si-global-global-{}-{}'.format(pivot_p[i], pivot_q[j]), stat])
                     si.append(df_history[df_name_si].iloc[0].to_numpy())
             si = np.concatenate(si, axis=0).reshape(len(pivot_p), len(pivot_q), -1).transpose(2, 0, 1)
-            si_ = np.stack([si[0], si[10], si[20], si[30]], axis=0)
+            if prune_iters == '30':
+                iter_list = [0, 10, 20, 30]
+            elif prune_iters == '15':
+                iter_list = [0, 4, 8, 15]
+            else:
+                raise ValueError('Not valid prune iters')
+            si_ = np.stack([si[x] for x in iter_list], axis=0)
             vmin, vmax = np.min(si_), np.max(si_)
 
             xlabel = '$q$'
@@ -1046,7 +1078,7 @@ def make_vis_by_pq(df_history):
             ax_1.imshow(y, vmin=vmin, vmax=vmax)
             ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
-            ax_1.set_title('$T=0$', fontsize=fontsize['label'])
+            ax_1.set_title('$T={}$'.format(iter_list[0]), fontsize=fontsize['label'])
             ax_1.set_xticks(np.arange(len(pivot_q)))
             ax_1.set_xticklabels(pivot_q)
             ax_1.set_yticks(np.arange(len(pivot_p)))
@@ -1056,7 +1088,7 @@ def make_vis_by_pq(df_history):
             ax_2.imshow(y, vmin=vmin, vmax=vmax)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
-            ax_2.set_title('$T=10$', fontsize=fontsize['label'])
+            ax_2.set_title('$T={}$'.format(iter_list[1]), fontsize=fontsize['label'])
             ax_2.set_xticks(np.arange(len(pivot_q)))
             ax_2.set_xticklabels(pivot_q)
             ax_2.set_yticks(np.arange(len(pivot_p)))
@@ -1066,7 +1098,7 @@ def make_vis_by_pq(df_history):
             ax_3.imshow(y, vmin=vmin, vmax=vmax)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
-            ax_3.set_title('$T=20$', fontsize=fontsize['label'])
+            ax_3.set_title('$T={}$'.format(iter_list[2]), fontsize=fontsize['label'])
             ax_3.set_xticks(np.arange(len(pivot_q)))
             ax_3.set_xticklabels(pivot_q)
             ax_3.set_yticks(np.arange(len(pivot_p)))
@@ -1076,7 +1108,7 @@ def make_vis_by_pq(df_history):
             im = ax_4.imshow(y, vmin=vmin, vmax=vmax)
             ax_4.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_4.set_ylabel(ylabel, fontsize=fontsize['label'])
-            ax_4.set_title('$T=30$', fontsize=fontsize['label'])
+            ax_4.set_title('$T={}$'.format(iter_list[3]), fontsize=fontsize['label'])
             ax_4.set_xticks(np.arange(len(pivot_q)))
             ax_4.set_xticklabels(pivot_q)
             ax_4.set_yticks(np.arange(len(pivot_p)))
@@ -1088,7 +1120,7 @@ def make_vis_by_pq(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'pq'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -1100,7 +1132,7 @@ def make_vis_by_layer(df_history):
     color_dict = {'0': 'blue', '1': 'cyan', '2': 'red'}
     linestyle_dict = {'0': '-', '1': '--', '2': '-.'}
     marker_dict = {'0': 'o', '1': 's', '2': 'p'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (15, 4)
@@ -1118,7 +1150,7 @@ def make_vis_by_layer(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = 'test/pr-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
         else:
             continue
         if mask:
@@ -1160,7 +1192,7 @@ def make_vis_by_layer(df_history):
             x = np.arange(len(pr))
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_1.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_1.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1176,7 +1208,7 @@ def make_vis_by_layer(df_history):
             x = np.arange(len(pr))
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_2.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1191,7 +1223,7 @@ def make_vis_by_layer(df_history):
             x = np.arange(len(pr))
             xlabel = 'Iteration (T)'
             ylabel = 'Percent of Remaining Weights'
-            ax_3.errorbar(x, pr, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_3.errorbar(x, pr * 100, yerr=pr_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1207,7 +1239,7 @@ def make_vis_by_layer(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'layer'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -1221,8 +1253,8 @@ def make_vis_by_ratio(df_history):
     color_dict = {'si-0.5-1-0-1': 'blue', 'si-1-2-0-1': 'cyan', 'lt-0.2': 'red', 'os-0.2': 'orange'}
     linestyle_dict = {'si-0.5-1-0-1': '-', 'si-1-2-0-1': '--', 'lt-0.2': '-.', 'os-0.2': ':'}
     marker_dict = {'si-0.5-1-0-1': 'o', 'si-1-2-0-1': 's', 'lt-0.2': 'p', 'os-0.2': 'D'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
-                'Gini Index': 'lower left'}
+    loc_dict = {'Accuracy': 'lower right', 'Percent of Remaining Weights': 'upper right',
+                'PQ Index': 'lower left', 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (15, 4)
     capsize = None
@@ -1240,12 +1272,12 @@ def make_vis_by_ratio(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
         elif prune_mode_list[0] in ['lt', 'os']:
             pivot_ = ['lt-0.2', 'os-0.2']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
         else:
             continue
         if mask:
@@ -1294,7 +1326,7 @@ def make_vis_by_ratio(df_history):
             y_std = y_neuron_std
             xlabel = 'Percent of Remaining Weights'
             ylabel = metric_name.split('/')[1]
-            ax_1.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_1.errorbar(x * 100, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1308,7 +1340,7 @@ def make_vis_by_ratio(df_history):
             y_std = y_layer_std
             xlabel = 'Percent of Remaining Weights'
             ylabel = metric_name.split('/')[1]
-            ax_2.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_2.errorbar(x * 100, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_2.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1321,7 +1353,7 @@ def make_vis_by_ratio(df_history):
             y_std = y_global_std
             xlabel = 'Percent of Remaining Weights'
             ylabel = metric_name.split('/')[1]
-            ax_3.errorbar(x, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
+            ax_3.errorbar(x * 100, y, yerr=y_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_3.set_ylabel(ylabel, fontsize=fontsize['label'])
@@ -1331,13 +1363,21 @@ def make_vis_by_ratio(df_history):
 
     for fig_name in fig:
         fig[fig_name] = plt.figure(fig_name)
+        ymin_1, ymax_1 = ax_dict_1[fig_name].get_ylim()
+        ymin_2, ymax_2 = ax_dict_2[fig_name].get_ylim()
+        ymin_3, ymax_3 = ax_dict_3[fig_name].get_ylim()
+        ymin = max([ymin_1, ymin_2, ymin_3])
+        ymax = max([ymax_1, ymax_2, ymax_3])
+        ax_dict_1[fig_name].set_ylim([ymin, ymax])
+        ax_dict_2[fig_name].set_ylim([ymin, ymax])
+        ax_dict_3[fig_name].set_ylim([ymin, ymax])
         ax_dict_1[fig_name].grid(linestyle='--', linewidth='0.5')
         ax_dict_2[fig_name].grid(linestyle='--', linewidth='0.5')
         ax_dict_3[fig_name].grid(linestyle='--', linewidth='0.5')
         fig[fig_name].tight_layout()
         dir_name = 'ratio'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)
@@ -1349,7 +1389,7 @@ def make_vis_by_si_layer(df_history):
     color_dict = {'0': 'blue', '1': 'cyan', '2': 'red'}
     linestyle_dict = {'0': '-', '1': '--', '2': '-.'}
     marker_dict = {'0': 'o', '1': 's', '2': 'p'}
-    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'Sparsity Index': 'lower left',
+    loc_dict = {'Accuracy': 'lower left', 'Percent of Remaining Weights': 'upper right', 'PQ Index': 'lower left',
                 'Gini Index': 'lower left'}
     fontsize = {'legend': 12, 'label': 16, 'ticks': 16}
     figsize = (15, 4)
@@ -1367,7 +1407,7 @@ def make_vis_by_si_layer(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = 'test/si-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global' and data_name == 'CIFAR10'
+                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
         else:
             continue
         if mask:
@@ -1408,14 +1448,14 @@ def make_vis_by_si_layer(df_history):
             si_std = df_history[df_name_neuron_std[i]].iloc[0].to_numpy()
             x = np.arange(len(si))
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_1.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_1.set_xlabel(xlabel, fontsize=fontsize['label'])
             ax_1.set_ylabel(ylabel, fontsize=fontsize['label'])
             ax_1.xaxis.set_tick_params(labelsize=fontsize['ticks'])
             ax_1.yaxis.set_tick_params(labelsize=fontsize['ticks'])
-        ax_1.legend(loc=loc_dict['Percent of Remaining Weights'], fontsize=fontsize['legend'])
+        ax_1.legend(loc=loc_dict['PQ Index'], fontsize=fontsize['legend'])
         ax_1.set_title('Neuron-wise Pruning', fontsize=fontsize['label'])
 
         for i in range(len(df_name_layer)):
@@ -1424,7 +1464,7 @@ def make_vis_by_si_layer(df_history):
             si_std = df_history[df_name_layer_std[i]].iloc[0].to_numpy()
             x = np.arange(len(si))
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_2.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_2.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -1439,7 +1479,7 @@ def make_vis_by_si_layer(df_history):
             si_std = df_history[df_name_global_std[i]].iloc[0].to_numpy()
             x = np.arange(len(si))
             xlabel = 'Iteration (T)'
-            ylabel = 'Sparsity Index'
+            ylabel = 'PQ Index'
             ax_3.errorbar(x, si, yerr=si_std, color=color_dict[pivot], linestyle=linestyle_dict[pivot],
                           label=label_dict[pivot], marker=marker_dict[pivot], capsize=capsize, capthick=capthick)
             ax_3.set_xlabel(xlabel, fontsize=fontsize['label'])
@@ -1456,7 +1496,7 @@ def make_vis_by_si_layer(df_history):
         fig[fig_name].tight_layout()
         dir_name = 'si_layer'
         dir_path = os.path.join(vis_path, dir_name)
-        fig_path = os.path.join(dir_path, '{}.{}'.format(fig_name, save_format))
+        fig_path = os.path.join(dir_path, '{}_{}.{}'.format(dir_name, fig_name, save_format))
         makedir_exist_ok(dir_path)
         plt.savefig(fig_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close(fig_name)

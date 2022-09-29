@@ -56,10 +56,7 @@ def main():
     resume_mode = [[resume_mode]]
     filename = '{}_{}'.format(run, mode)
     if model == 0:
-        if mode == 'scope':
-            model_names = ['mlp']
-        else:
-            model_names = ['linear', 'mlp']
+        model_names = ['linear', 'mlp']
         prune_iters = ['30']
     elif model == 1:
         model_names = ['cnn']
