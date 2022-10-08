@@ -1,6 +1,5 @@
 #!/bin/bash
 
-modes=('os', 'lt', 'si')
 resume_mode=0
 num_gpus=1
 round=8
