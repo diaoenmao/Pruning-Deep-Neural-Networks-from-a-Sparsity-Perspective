@@ -30,11 +30,6 @@ class Metric(object):
         self.reset()
 
     def make_metric_name(self, metric_name):
-        for split in metric_name:
-            if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
-                metric_name[split] += ['Accuracy']
-            else:
-                raise ValueError('Not valid data name')
         return metric_name
 
     def reset(self):
