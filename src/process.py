@@ -39,7 +39,7 @@ def make_controls(mode, model):
     else:
         raise ValueError('Not valid model')
     if mode == 'os':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -47,7 +47,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'lt':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -55,7 +55,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -63,7 +63,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'scope':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['neuron', 'layer']
@@ -71,7 +71,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-p':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -79,7 +79,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-q':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -87,7 +87,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-eta_m':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -95,7 +95,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-gamma':
-        data_names = ['FashionMNIST']
+        data_names = ['FashionMNIST', 'CIFAR10']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -108,13 +108,12 @@ def make_controls(mode, model):
 
 
 def main():
-    model = 1
+    model = 0
     modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
-    modes = ['si', 'lt', 'os']
-    modes = ['si', 'lt', 'os', 'scope']
-    modes = ['si', 'lt', 'os', 'si-p', 'si-q']
-    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q']
-    modes = ['si', 'si-eta_m', 'si-gamma']
+    # modes = ['si', 'lt', 'os']
+    # modes = ['si', 'lt', 'os', 'scope']
+    # modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q']
+    # modes = ['si', 'si-eta_m', 'si-gamma']
     controls = []
     for mode in modes:
         controls += make_controls(mode, model)
