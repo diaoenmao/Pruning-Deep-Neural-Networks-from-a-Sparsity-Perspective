@@ -124,7 +124,7 @@ def process_control():
     cfg['prune_scope'] = cfg['control']['prune_scope']
     cfg['prune_mode'] = cfg['control']['prune_mode'].split('-')
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
-                  'CIFAR100': [3, 32, 32]}
+                  'CIFAR100': [3, 32, 32], 'ImageNet': [3, 224, 224]}
     cfg['data_shape'] = data_shape[cfg['data_name']]
     cfg['linear'] = {}
     cfg['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
@@ -132,6 +132,8 @@ def process_control():
     cfg['resnet9'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet18'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['wresnet28x2'] = {'depth': 28, 'widen_factor': 2, 'drop_rate': 0.0}
+    cfg['wresnet28x8'] = {'depth': 28, 'widen_factor': 8, 'drop_rate': 0.0}
+    cfg['resnet50'] = {}
     model_name = cfg['model_name']
     cfg[model_name]['shuffle'] = {'train': True, 'test': False}
     cfg[model_name]['optimizer_name'] = 'SGD'
@@ -139,14 +141,24 @@ def process_control():
     cfg[model_name]['momentum'] = 0.9
     cfg[model_name]['weight_decay'] = 5e-4
     cfg[model_name]['nesterov'] = True
-    cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
+    if cfg['data_name'] in ['ImageNet']:
+        cfg[model_name]['scheduler_name'] = 'StepLR'
+        cfg[model_name]['step_size'] = 30
+        cfg[model_name]['factor'] = 0.1
+    else:
+        cfg[model_name]['scheduler_name'] = 'CosineAnnealingLR'
     if model_name in ['linear', 'mlp', 'cnn']:
         cfg[model_name]['num_epochs'] = 200
-    elif model_name in ['resnet9', 'resnet18', 'wresnet28x2']:
+    elif model_name in ['resnet9', 'resnet18', 'wresnet28x2', 'wresnet28x8']:
         cfg[model_name]['num_epochs'] = 200
+    elif model_name in ['resnet50']:
+        cfg[model_name]['num_epochs'] = 90
     else:
         raise ValueError('Not valid model name')
-    cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
+    if cfg['data_name'] in ['ImageNet']:
+        cfg[model_name]['batch_size'] = {'train': 64, 'test': 64}
+    else:
+        cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     cfg['p'] = torch.arange(0.1, 1.1, 0.1)
     cfg['q'] = torch.arange(1.0, 2.1, 0.1)
     cfg['beta'] = 0.9

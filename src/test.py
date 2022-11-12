@@ -229,3 +229,8 @@ from logger import make_logger
 #     si = (torch.linalg.norm(x, p, dim=dim).pow(p) / d).pow(1 / p) / \
 #          (torch.linalg.norm(x, q, dim=dim).pow(q) / d).pow(1 / q)
 #     print(si)
+
+if __name__ == "__main__":
+    cfg['target_size'] = 10
+    model = models.resnet50()
+    print(model)

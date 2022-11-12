@@ -10,14 +10,23 @@ from tqdm import tqdm
 from collections import Counter
 from utils import makedir_exist_ok
 
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']
+IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp")
 
 
-def find_classes(dir):
-    classes = [d.name for d in os.scandir(dir) if d.is_dir()]
-    classes.sort()
-    classes_to_labels = {classes[i]: i for i in range(len(classes))}
-    return classes_to_labels
+def has_file_allowed_extension(filename, extensions):
+    return filename.lower().endswith(extensions if isinstance(extensions, str) else tuple(extensions))
+
+
+def is_image_file(filename: str) -> bool:
+    return has_file_allowed_extension(filename, IMG_EXTENSIONS)
+
+
+def find_classes(directory):
+    classes = sorted(entry.name for entry in os.scandir(directory) if entry.is_dir())
+    if not classes:
+        raise FileNotFoundError(f"Couldn't find any class folder in {directory}.")
+    class_to_idx = {cls_name: i for i, cls_name in enumerate(classes)}
+    return classes, class_to_idx
 
 
 def pil_loader(path):
@@ -40,12 +49,6 @@ def default_loader(path):
         return accimage_loader(path)
     else:
         return pil_loader(path)
-
-
-def has_file_allowed_extension(filename, extensions):
-    filename_lower = filename.lower()
-    return any(filename_lower.endswith(ext) for ext in extensions)
-
 
 def make_classes_counts(label):
     label = np.array(label)
@@ -128,20 +131,9 @@ def extract_file(src, dest=None, delete=False):
     return
 
 
-def make_data(root, extensions):
-    path = []
-    files = glob.glob('{}/**/*'.format(root), recursive=True)
-    for file in files:
-        if has_file_allowed_extension(file, extensions):
-            path.append(os.path.normpath(file))
-    return path
-
-
-def make_img(path, classes_to_labels, extensions=IMG_EXTENSIONS):
-    img, label = [], []
-    classes = []
-    for node in classes_to_labels:
-        classes.append(node.name)
+def make_data_target(path, classes_to_labels, extensions):
+    data, target = [], []
+    classes = list(classes_to_labels.keys())
     for c in sorted(classes):
         d = os.path.join(path, c)
         if not os.path.isdir(d):
@@ -150,9 +142,9 @@ def make_img(path, classes_to_labels, extensions=IMG_EXTENSIONS):
             for filename in sorted(filenames):
                 if has_file_allowed_extension(filename, extensions):
                     cur_path = os.path.join(root, filename)
-                    img.append(cur_path)
-                    label.append(classes_to_labels[c])
-    return img, label
+                    data.append(cur_path)
+                    target.append(classes_to_labels[c])
+    return data, target
 
 
 class Compose(object):

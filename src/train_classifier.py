@@ -68,16 +68,24 @@ def runExperiment():
         mask_state_dict = result['mask_state_dict']
         mask.load_state_dict(mask_state_dict[-1])
         logger = result['logger']
+    if cfg['world_size'] > 1:
+        model = torch.nn.DataParallel(model, device_ids=list(range(cfg['world_size'])))
     compression = Compression(cfg['prune_scope'], cfg['prune_mode'])
     sparsity_index = SparsityIndex(cfg['p'], cfg['q'])
     for iter in range(last_iter, cfg['prune_iters'] + 1):
         if last_epoch[-1] == 0:
             metric.reset()
-            compression.init(model, mask, init_model_state_dict)
+            if cfg['world_size'] > 1:
+                compression.init(model.module, mask, init_model_state_dict)
+            else:
+                compression.init(model, mask, init_model_state_dict)
             optimizer = make_optimizer(model.parameters(), cfg['model_name'])
             scheduler = make_scheduler(optimizer, cfg['model_name'])
             if iter > 0:
-                model_state_dict.append(to_device(model.state_dict(), 'cpu'))
+                if cfg['world_size'] > 1:
+                    model_state_dict.append(to_device(model.module.state_dict(), 'cpu'))
+                else:
+                    model_state_dict.append(to_device(model.state_dict(), 'cpu'))
                 mask_state_dict.append(mask.state_dict())
         for epoch in range(last_epoch[-1] + 1, cfg[cfg['model_name']]['num_epochs'] + 1):
             logger.save(True)
@@ -86,7 +94,10 @@ def runExperiment():
             logger.save(False)
             scheduler.step()
             last_epoch[-1] = epoch
-            model_state_dict[-1] = to_device(model.state_dict(), 'cpu')
+            if cfg['world_size'] > 1:
+                model_state_dict[-1] = to_device(model.module.state_dict(), 'cpu')
+            else:
+                model_state_dict[-1] = to_device(model.state_dict(), 'cpu')
             result = {'cfg': cfg, 'iter': iter, 'epoch': last_epoch, 'init_model_state_dict': init_model_state_dict,
                       'model_state_dict': model_state_dict, 'optimizer_state_dict': optimizer.state_dict(),
                       'scheduler_state_dict': scheduler.state_dict(), 'metric_state_dict': metric.state_dict(),
@@ -100,13 +111,23 @@ def runExperiment():
             last_epoch.append(0)
             result = resume(best_path, verbose=False)
             if cfg['prune_mode'][0] in ['os']:
-                model.load_state_dict(result['model_state_dict'][0])
+                if cfg['world_size'] > 1:
+                    model.module.load_state_dict(result['model_state_dict'][0])
+                else:
+                    model.load_state_dict(result['model_state_dict'][0])
             elif cfg['prune_mode'][0] in ['lt', 'si']:
-                model.load_state_dict(result['model_state_dict'][-1])
+                if cfg['world_size'] > 1:
+                    model.module.load_state_dict(result['model_state_dict'][-1])
+                else:
+                    model.load_state_dict(result['model_state_dict'][-1])
             else:
                 raise ValueError('Not valid prune mode')
-            sparsity_index.make_sparsity_index(model, mask)
-            compression.compress(model, mask, sparsity_index)
+            if cfg['world_size'] > 1:
+                sparsity_index.make_sparsity_index(model.module, mask)
+                compression.compress(model.module, mask, sparsity_index)
+            else:
+                sparsity_index.make_sparsity_index(model, mask)
+                compression.compress(model, mask, sparsity_index)
     return
 
 
@@ -119,9 +140,13 @@ def train(data_loader, model, optimizer, mask, metric, logger, iter, epoch):
         input = to_device(input, cfg['device'])
         optimizer.zero_grad()
         output = model(input)
+        output['loss'] = output['loss'].mean() if cfg['world_size'] > 1 else output['loss']
         output['loss'].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
-        mask.freeze_grad(model)
+        if cfg['world_size'] > 1:
+            mask.freeze_grad(model.module)
+        else:
+            mask.freeze_grad(model)
         optimizer.step()
         evaluation = metric.evaluate(metric.metric_name['train'], input, output)
         logger.append(evaluation, 'train', n=input_size)

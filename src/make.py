@@ -64,32 +64,38 @@ def main():
     elif model == 2:
         model_names = ['resnet18']
         prune_iters = ['15']
+    elif model == 3:
+        model_names = ['wresnet28x8']
+        prune_iters = ['15']
+    elif model == 4:
+        model_names = ['resnet50']
+        prune_iters = ['15']
     else:
         raise ValueError('Not valid model')
     if mode == 'os':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'ImageNet']
         prune_scope = ['global']
         prune_mode = ['os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'lt':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'ImageNet']
         prune_scope = ['global']
         prune_mode = ['lt-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'si':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'ImageNet']
         prune_scope = ['global']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_controls(script_name, init_seeds, world_size, num_experiments, resume_mode, control_name)
     elif mode == 'scope':
         script_name = [['{}_classifier.py'.format(run)]]
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'ImageNet']
         prune_scope = ['neuron', 'layer']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]

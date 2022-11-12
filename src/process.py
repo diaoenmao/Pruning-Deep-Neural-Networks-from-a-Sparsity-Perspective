@@ -36,6 +36,9 @@ def make_controls(mode, model):
     elif model == 2:
         model_names = ['resnet18']
         prune_iters = ['15']
+    elif model == 3:
+        model_names = ['resnet50']
+        prune_iters = ['15']
     else:
         raise ValueError('Not valid model')
     if mode == 'os':

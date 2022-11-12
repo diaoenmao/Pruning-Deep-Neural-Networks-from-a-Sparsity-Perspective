@@ -33,7 +33,7 @@ class Metric(object):
         return metric_name
 
     def reset(self):
-        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']:
+        if cfg['data_name'] in ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100', 'ImageNet']:
             pivot = -float('inf')
             pivot_direction = 'up'
             pivot_name = 'Accuracy'
