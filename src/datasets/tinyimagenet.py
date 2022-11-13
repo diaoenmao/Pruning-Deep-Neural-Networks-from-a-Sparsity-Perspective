@@ -6,17 +6,12 @@ from PIL import Image
 from torch.utils.data import Dataset
 from utils import check_exists, save, load, makedir_exist_ok
 from .utils import IMG_EXTENSIONS
-from .utils import extract_file, make_classes_counts, make_data_target
+from .utils import download_url, extract_file, make_classes_counts, make_data_target
 
 
-class ImageNet(Dataset):
-    data_name = 'ImageNet'
-    file = [('http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar',
-             '1d675b47d978889d74fa0da5fadfb00e'),
-            ('http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar',
-             '29b22e2961454d5413ddabcf34fc5622'),
-            ('http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_devkit_t12.tar.gz',
-             'fa75699e90414af021442c21a62c3abf')]
+class TinyImageNet(Dataset):
+    data_name = 'TinyImageNet'
+    file = [('http://cs231n.stanford.edu/tiny-imagenet-200.zip', None)]
 
     def __init__(self, root, split, transform=None):
         self.root = os.path.expanduser(root)
@@ -52,9 +47,17 @@ class ImageNet(Dataset):
     def raw_folder(self):
         return os.path.join(self.root, 'raw')
 
+    def download(self):
+        makedir_exist_ok(self.raw_folder)
+        for (url, md5) in self.file:
+            filename = os.path.basename(url)
+            download_url(url, os.path.join(self.raw_folder, filename), md5)
+            extract_file(os.path.join(self.raw_folder, filename))
+        return
+
     def process(self):
         if not check_exists(self.raw_folder):
-            raise RuntimeError('Dataset not found')
+            self.download()
         train_set, test_set, meta = self.make_data()
         save(train_set, os.path.join(self.processed_folder, 'train.pt'), mode='pickle')
         save(test_set, os.path.join(self.processed_folder, 'test.pt'), mode='pickle')
@@ -67,31 +70,26 @@ class ImageNet(Dataset):
         return fmt_str
 
     def make_data(self):
-        train_path = os.path.join(self.raw_folder, 'ILSVRC2012_img_train')
-        test_path = os.path.join(self.raw_folder, 'ILSVRC2012_img_val')
-        meta_path = os.path.join(self.raw_folder, 'ILSVRC2012_devkit_t12')
-        extract_file(os.path.join(self.raw_folder, 'ILSVRC2012_img_train.tar'), train_path)
-        extract_file(os.path.join(self.raw_folder, 'ILSVRC2012_img_val.tar'), test_path)
-        extract_file(os.path.join(self.raw_folder, 'ILSVRC2012_devkit_t12.tar'), meta_path)
-        for archive in [os.path.join(train_path, archive) for archive in os.listdir(train_path)]:
-            extract_file(archive, os.path.splitext(archive)[0], delete=True)
-        classes_to_labels, target_size = make_meta(meta_path)
-        with open(os.path.join(meta_path, 'data', 'ILSVRC2012_validation_ground_truth.txt'), 'r') as f:
-            test_id = f.readlines()
-        test_id = [int(i) for i in test_id]
-        test_data = sorted([os.path.join(test_path, file) for file in os.listdir(test_path)])
-        test_wnid = []
-        class_names = list(classes_to_labels.keys())
-        class_ids = list(classes_to_labels.values())
-        for test_id_i in test_id:
-            test_wnid_i = class_names[class_ids.index(test_id_i - 1)]
-            test_wnid.append(test_wnid_i)
+        train_path = os.path.join(self.raw_folder, 'tiny-imagenet-200', 'train')
+        test_path = os.path.join(self.raw_folder, 'tiny-imagenet-200', 'val')
+        with open(os.path.join(self.raw_folder, 'tiny-imagenet-200', 'wnids.txt'), 'r') as f:
+            classes = f.read().splitlines()
+        classes_to_labels = {}
+        for i in range(len(classes)):
+            classes_to_labels[classes[i]] = i
+        target_size = len(classes)
+        with open(os.path.join(test_path, 'val_annotations.txt'), 'r') as f:
+            test_id = f.read().splitlines()
+        test_id = [x.split('\t') for x in test_id]
+        test_data = [x[0] for x in test_id]
+        test_wnid = [x[1] for x in test_id]
         for test_wnid_i in set(test_wnid):
-            makedir_exist_ok(os.path.join(test_path, test_wnid_i))
+            makedir_exist_ok(os.path.join(test_path, 'images', test_wnid_i))
         for test_wnid_i, test_data_i in zip(test_wnid, test_data):
-            shutil.move(test_data_i, os.path.join(test_path, test_wnid_i, os.path.basename(test_data_i)))
-        train_data, train_target = make_data_target(train_path, classes_to_labels, IMG_EXTENSIONS)
-        test_data, test_target = make_data_target(test_path, classes_to_labels, IMG_EXTENSIONS)
+            shutil.move(os.path.join(test_path, 'images', test_data_i),
+                        os.path.join(test_path, 'images', test_wnid_i, os.path.basename(test_data_i)))
+        train_data, train_target = make_data_target(os.path.join(train_path), classes_to_labels, IMG_EXTENSIONS)
+        test_data, test_target = make_data_target(os.path.join(test_path, 'images'), classes_to_labels, IMG_EXTENSIONS)
         train_id, test_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(np.int64)
         return (train_id, train_data, train_target), (test_id, test_data, test_target), (classes_to_labels, target_size)
 

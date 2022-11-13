@@ -9,7 +9,8 @@ data_stats = {'MNIST': ((0.1307,), (0.3081,)), 'FashionMNIST': ((0.2860,), (0.35
               'CIFAR10': ((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
               'CIFAR100': ((0.5071, 0.4865, 0.4409), (0.2673, 0.2564, 0.2762)),
               'SVHN': ((0.4377, 0.4438, 0.4728), (0.1980, 0.2010, 0.1970)),
-              'ImageNet': ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))}
+              'TinyImageNet': ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+              'ImageNet': ((0.4802, 0.4481,  0.3975), (0.2770, 0.2691, 0.2821))}
 
 
 def fetch_dataset(data_name, verbose=True):
@@ -49,6 +50,19 @@ def fetch_dataset(data_name, verbose=True):
                                'transform=datasets.Compose([transforms.ToTensor()]))'.format(data_name))
         dataset['train'].transform = datasets.Compose([
             transforms.RandomCrop(32, padding=4, padding_mode='reflect'),
+            transforms.ToTensor(),
+            transforms.Normalize(*data_stats[data_name])])
+        dataset['test'].transform = datasets.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(*data_stats[data_name])])
+    elif data_name in ['TinyImageNet']:
+        dataset['train'] = eval('datasets.{}(root=root, split="train", '
+                                'transform=datasets.Compose([transforms.ToTensor()]))'.format(data_name))
+        dataset['test'] = eval('datasets.{}(root=root, split="test", '
+                               'transform=datasets.Compose([transforms.ToTensor()]))'.format(data_name))
+        dataset['train'].transform = datasets.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(64, padding=4, padding_mode='reflect'),
             transforms.ToTensor(),
             transforms.Normalize(*data_stats[data_name])])
         dataset['test'].transform = datasets.Compose([

@@ -124,7 +124,7 @@ def process_control():
     cfg['prune_scope'] = cfg['control']['prune_scope']
     cfg['prune_mode'] = cfg['control']['prune_mode'].split('-')
     data_shape = {'MNIST': [1, 28, 28], 'FashionMNIST': [1, 28, 28], 'SVHN': [3, 32, 32], 'CIFAR10': [3, 32, 32],
-                  'CIFAR100': [3, 32, 32], 'ImageNet': [3, 224, 224]}
+                  'CIFAR100': [3, 32, 32], 'TinyImageNet': [3, 64, 64], 'ImageNet': [3, 224, 224]}
     cfg['data_shape'] = data_shape[cfg['data_name']]
     cfg['linear'] = {}
     cfg['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
@@ -156,7 +156,7 @@ def process_control():
     else:
         raise ValueError('Not valid model name')
     if cfg['data_name'] in ['ImageNet']:
-        cfg[model_name]['batch_size'] = {'train': 64, 'test': 64}
+        cfg[model_name]['batch_size'] = {'train': 1024, 'test': 1024}
     else:
         cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     cfg['p'] = torch.arange(0.1, 1.1, 0.1)

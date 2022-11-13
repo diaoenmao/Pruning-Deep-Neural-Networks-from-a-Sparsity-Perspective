@@ -10,20 +10,20 @@ from utils import save, collate, Stats, makedir_exist_ok, process_control, proce
 if __name__ == "__main__":
     stats_path = os.path.join('res', 'path')
     dim = 1
-    # data_names = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100', 'ImageNet']
-    data_names = ['ImageNet']
+    # data_names = ['MNIST', 'FashionMNIST', 'SVHN', 'CIFAR10', 'CIFAR100', 'TinyImageNet', 'ImageNet']
+    data_names = ['TinyImageNet']
     process_control()
     cfg['seed'] = 0
     with torch.no_grad():
         for data_name in data_names:
             dataset = fetch_dataset(data_name)
-            if data_name not in ['ImageNet']:
-                dataset['train'].transform = datasets.Compose([transforms.ToTensor()])
-            else:
+            if data_name in ['ImageNet']:
                 dataset['train'].transform = datasets.Compose([
                     transforms.Resize(256),
                     transforms.CenterCrop(224),
                     transforms.ToTensor()])
+            else:
+                dataset['train'].transform = datasets.Compose([transforms.ToTensor()])
             process_dataset(dataset)
             data_loader = make_data_loader(dataset, cfg['model_name'])
             stats = Stats(dim=dim)
