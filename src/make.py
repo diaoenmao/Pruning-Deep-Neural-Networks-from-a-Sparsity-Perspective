@@ -102,7 +102,7 @@ def main():
     elif mode == 'scope':
         script_name = [['{}_classifier.py'.format(run)]]
         # data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'ImageNet']
-        data_names = ['CIFAR100']
+        data_names = ['TinyImageNet']
         prune_scope = ['neuron', 'layer']
         prune_mode = ['si-0.5-1-0-1', 'si-1-2-0-1', 'lt-0.2', 'os-0.2']
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]

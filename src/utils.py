@@ -152,11 +152,13 @@ def process_control():
     elif model_name in ['resnet9', 'resnet18', 'wresnet28x2', 'wresnet28x8']:
         cfg[model_name]['num_epochs'] = 200
     elif model_name in ['resnet50']:
-        cfg[model_name]['num_epochs'] = 90
+        cfg[model_name]['num_epochs'] = 200
     else:
         raise ValueError('Not valid model name')
     if cfg['data_name'] in ['ImageNet']:
         cfg[model_name]['batch_size'] = {'train': 1024, 'test': 1024}
+    elif cfg['data_name'] in ['TinyImageNet']:
+        cfg[model_name]['batch_size'] = {'train': 500, 'test': 500}
     else:
         cfg[model_name]['batch_size'] = {'train': 250, 'test': 250}
     cfg['p'] = torch.arange(0.1, 1.1, 0.1)

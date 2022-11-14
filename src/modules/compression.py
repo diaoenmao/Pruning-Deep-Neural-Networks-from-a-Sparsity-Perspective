@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from collections import OrderedDict
 from config import cfg
@@ -113,7 +114,7 @@ class Compression:
                 pivot_value = torch.sort(pivot_param.view(-1))[0][num_prune]
             else:
                 prune_ratio = float(self.prune_mode[1])
-                pivot_value = torch.quantile(pivot_param.data.abs(), prune_ratio)
+                pivot_value = np.quantile(pivot_param.data.abs().cpu().numpy(), prune_ratio)
             new_mask = OrderedDict()
             for name, param in model.named_parameters():
                 parameter_type = name.split('.')[-1]
