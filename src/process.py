@@ -37,12 +37,15 @@ def make_controls(mode, model):
         model_names = ['resnet18']
         prune_iters = ['15']
     elif model == 3:
+        model_names = ['wresnet28x8']
+        prune_iters = ['15']
+    elif model == 4:
         model_names = ['resnet50']
         prune_iters = ['15']
     else:
         raise ValueError('Not valid model')
     if mode == 'os':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -50,7 +53,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'lt':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -58,7 +61,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -66,7 +69,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'scope':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['neuron', 'layer']
@@ -74,7 +77,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-p':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -82,7 +85,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-q':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -90,7 +93,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-eta_m':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -98,7 +101,7 @@ def make_controls(mode, model):
         control_name = [[data_names, model_names, prune_iters, prune_scope, prune_mode]]
         controls = make_control(control_name)
     elif mode == 'si-gamma':
-        data_names = ['FashionMNIST', 'CIFAR10']
+        data_names = ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'TinyImageNet']
         model_names = model_names
         prune_iters = prune_iters
         prune_scope = ['global']
@@ -111,10 +114,10 @@ def make_controls(mode, model):
 
 
 def main():
-    model = 0
-    modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
+    model = 3
+    # modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q', 'si-eta_m', 'si-gamma']
     # modes = ['si', 'lt', 'os']
-    # modes = ['si', 'lt', 'os', 'scope']
+    modes = ['si', 'lt', 'os', 'scope']
     # modes = ['si', 'lt', 'os', 'scope', 'si-p', 'si-q']
     # modes = ['si', 'si-eta_m', 'si-gamma']
     controls = []
@@ -127,11 +130,11 @@ def main():
     make_vis_by_layer(df_history)
     make_vis_by_ratio(df_history)
     make_vis_by_si_layer(df_history)
-    make_vis_by_p(df_history)
-    make_vis_by_q(df_history)
+    # make_vis_by_p(df_history)
+    # make_vis_by_q(df_history)
     make_vis_by_pq(df_history)
-    make_vis_by_eta_m(df_history)
-    make_vis_by_gamma(df_history)
+    # make_vis_by_eta_m(df_history)
+    # make_vis_by_gamma(df_history)
     return
 
 
@@ -1152,7 +1155,7 @@ def make_vis_by_layer(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = 'test/pr-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18', 'wresnet28x8', 'resnet50'] and scope == 'global'
         else:
             continue
         if mask:
@@ -1274,12 +1277,12 @@ def make_vis_by_ratio(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18', 'wresnet28x8', 'resnet50'] and scope == 'global'
         elif prune_mode_list[0] in ['lt', 'os']:
             pivot_ = ['lt-0.2', 'os-0.2']
             pivot = '-'.join(prune_mode_list)
             mask = metric_name in ['test/Accuracy'] and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18', 'wresnet28x8', 'resnet50'] and scope == 'global'
         else:
             continue
         if mask:
@@ -1409,7 +1412,7 @@ def make_vis_by_si_layer(df_history):
             pivot_ = ['si-0.5-1-0-1', 'si-1-2-0-1']
             pivot = '-'.join(prune_mode_list)
             mask = 'test/si-layer' in metric_name and stat == 'mean' and pivot in pivot_ and \
-                   model_name in ['mlp', 'cnn', 'resnet18'] and scope == 'global'
+                   model_name in ['mlp', 'cnn', 'resnet18', 'wresnet28x8', 'resnet50'] and scope == 'global'
         else:
             continue
         if mask:
