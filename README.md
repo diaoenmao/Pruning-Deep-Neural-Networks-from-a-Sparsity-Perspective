@@ -1,5 +1,5 @@
 # Pruning Deep Neural Networks from a Sparsity Perspective
-This is an implementation of [Pruning Deep Neural Networks from a Sparsity Perspective]().
+This is an implementation of [Pruning Deep Neural Networks from a Sparsity Perspective]()
 - An illustration of our hypothesis on the relationship between sparsity and compressibility of neural networks. 
 <p align="center">
 <img src="/asset/si.png">
