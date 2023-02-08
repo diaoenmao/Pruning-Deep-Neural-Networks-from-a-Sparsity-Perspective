@@ -33,7 +33,7 @@ See requirements.txt
     ```
 
 ## Results
-- Results of (a) retrained and (b) pruned models at each pruning iteration for ‘Global Pruning’ with CIFAR10 and ResNet18.
+- Results of (a) retrained and (b) pruned models at each pruning iteration for 'Global Pruning' with CIFAR10 and ResNet18.
 <p align="center">
 <img src="/asset/retrained-pruned_CIFAR10_resnet18_global.png">
 </p>
