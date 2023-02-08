@@ -1,14 +1,21 @@
 # Pruning Deep Neural Networks from a Sparsity Perspective
-This is an implementation of Pruning Deep Neural Networks from a Sparsity Perspective
- 
+This is an implementation of [Pruning Deep Neural Networks from a Sparsity Perspective]()
+- An illustration of our hypothesis on the relationship between sparsity and compressibility of neural networks. 
+<p align="center">
+<img src="/asset/si.png">
+</p>
+
 ## Requirements
 See requirements.txt
 
-## Instruction
-- Use make.sh to generate run script
-- Use make.py to generate exp script
-- Use process.py to process exp results
-- Hyperparameters can be found in config.yml and process_control() in utils.py
+## Instructions
+ - Global hyperparameters are configured in `config.yml`
+ - Use `make.sh` to generate run script
+ - Use `make.py` to generate exp script
+ - Use `process.py` to process exp results
+ - Experimental setup are listed in `make.py` 
+ - Hyperparameters can be found at `process_control()` in utils.py 
+
 
 ## Examples
  - Run make_stats.py to prepare for each dataset
@@ -24,3 +31,17 @@ See requirements.txt
     ```ruby
     python train_classifier.py --control_name CIFAR10_resnet18_30_neuron_si-0.5-1.0-0.001-1.2
     ```
+
+## Results
+- Results of (a) retrained and (b) pruned models at each pruning iteration for ‘Global Pruning’ with CIFAR10 and ResNet18.
+<p align="center">
+<img src="/asset/retrained-pruned_CIFAR10_resnet18_global.png">
+</p>
+
+## Acknowledgements
+*Enmao Diao  
+Ganghua Wang  
+Jiawei Zhang  
+Yuhong Yang  
+Jie Ding  
+Vahid Tarokh*
