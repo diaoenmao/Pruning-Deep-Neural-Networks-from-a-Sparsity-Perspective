@@ -6,7 +6,7 @@
 </p>
 
 ## Requirements
-See requirements.txt
+See `requirements.txt`
 
 ## Instructions
  - Global hyperparameters are configured in `config.yml`
